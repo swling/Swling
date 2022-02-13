@@ -1,12 +1,9 @@
 <?php
 
 require 'config.php';
+// new Action\User\Action_Test;
+// new WP_Test;
+// new Component\Test;
 
-// var_export($_SERVER['REQUEST_URI']);
-
-// new Action\User\ActionTest;
-new Action\User\Action_Test;
-
-new WP_Test;
-
-new Component\Test;
+$route = new Controller\Route();
+echo $route->render();

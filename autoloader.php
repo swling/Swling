@@ -19,7 +19,7 @@ spl_autoload_register(function ($class) {
 	 * - 本框架其他类：路径统一转小写
 	 */
 	if (0 === stripos($class, 'wp_')) {
-		$src_dir  = 'wp-includes';
+		$src_dir  = $src_dir . '/wp-includes';
 		$filename = 'class-' . strtolower($filename);
 	} else if (0 !== stripos($class, 'component')) {
 		$filename = strtolower($filename);
