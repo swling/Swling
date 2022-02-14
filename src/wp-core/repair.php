@@ -11,6 +11,13 @@ function is_multisite() {
 	return false;
 }
 
+/**
+ * @uses dbDelta
+ */
+function wp_should_upgrade_global_tables() {
+	return true;
+}
+
 function __() {}
 
 function is_wp_error() {

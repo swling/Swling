@@ -43,3 +43,10 @@ define('WP_DEBUG_DISPLAY', null);
 // 实例化数据库连接
 $wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $wpdb->set_prefix($table_prefix);
+
+// 创建数据库依赖 wpdb
+require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/admin/schema.php';
+require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/admin/dbDelta.php';
+if (isset($_GET['install'])) {
+	dbDelta('all');
+}
