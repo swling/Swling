@@ -36,7 +36,7 @@ class Route {
 	public function __construct() {
 		$request              = str_replace('/' . SWL_DIR_NAME . '/', '', $_SERVER['REQUEST_URI']);
 		$request_arr          = parse_url($request);
-		$path                 = $request_arr['path'];
+		$path                 = $request_arr['path'] ?? '';
 		$this->query          = $request_arr['query'] ?? '';
 		$this->api_prefix     = static::get_api_prefix();
 		$this->is_api_request = false;
@@ -54,6 +54,10 @@ class Route {
 	}
 
 	public function render() {
+		if (!$this->controller) {
+			return;
+		}
+
 		if (class_exists($this->controller)) {
 			new $this->controller($this->query);
 		} else {
