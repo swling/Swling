@@ -19,7 +19,7 @@ abstract class WPDB_Handler_Abstract {
 		$this->table = $wpdb->$table_name;
 	}
 
-	public function insert(array $data, array $format = []): int{
+	final public function insert(array $data, array $format = []): int{
 		$data = apply_filters("insert_{$this->object_name}_data", $data);
 
 		do_action("before_insert_{$this->object_name}", $data);
@@ -34,7 +34,7 @@ abstract class WPDB_Handler_Abstract {
 	}
 
 	// 需要设置安全过滤 prepare （未完成）
-	public function get(array $where) {
+	final public function get(array $where) {
 		// 数据钩子，可用于对象缓存拦截sql查询
 		$data = apply_filters("get_{$this->object_name}_data", false, $where);
 		if (false !== $data) {
@@ -68,7 +68,7 @@ abstract class WPDB_Handler_Abstract {
 		return $this->wpdb->get_row($sql);
 	}
 
-	public function update(array $data, array $where, array $format = [], array $where_format = []) {
+	final public function update(array $data, array $where, array $format = [], array $where_format = []) {
 		$data = apply_filters("update_{$this->object_name}_data", $data);
 
 		do_action("before_update_{$this->object_name}", $data);
@@ -82,7 +82,7 @@ abstract class WPDB_Handler_Abstract {
 		return $update;
 	}
 
-	public function delete(array $where, array $where_format = []) {
+	final public function delete(array $where, array $where_format = []) {
 		do_action("before_delete_{$this->object_name}", $where);
 
 		$delete = $this->wpdb->delete($this->table, $where, $where_format);
