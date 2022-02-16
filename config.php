@@ -3,16 +3,16 @@
 ini_set('display_errors', 'On');
 
 // 定义插件文件路径
-define('SWL_PATH', __DIR__);
+define('ABSPATH', __DIR__ . DIRECTORY_SEPARATOR);
 
 // 安装目录
-define('SWL_DIR_NAME', basename(__DIR__));
+define('DIR_NAME', basename(__DIR__));
 
 // 自动加载器
-require SWL_PATH . DIRECTORY_SEPARATOR . 'autoloader.php';
-require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/repair.php';
-require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/class-wpdb.php';
-require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/plugin.php';
+require ABSPATH . 'autoloader.php';
+require ABSPATH . 'src/wp-core/repair.php';
+require ABSPATH . 'src/wp-core/class-wpdb.php';
+require ABSPATH . 'src/wp-core/plugin.php';
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
 define('DB_NAME', 'test');
@@ -45,8 +45,8 @@ $wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $wpdb->set_prefix($table_prefix);
 
 // 创建数据库依赖 wpdb
-require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/admin/schema.php';
-require SWL_PATH . DIRECTORY_SEPARATOR . '/src/wp-core/admin/dbDelta.php';
+require ABSPATH . 'src/wp-core/admin/schema.php';
+require ABSPATH . 'src/wp-core/admin/dbDelta.php';
 if (isset($_GET['install'])) {
 	dbDelta('all');
 }
