@@ -391,7 +391,7 @@ class WP_Tax_Query {
 		$join  = '';
 		$where = '';
 
-		$this->clean_query( $clause );
+		// $this->clean_query( $clause );
 
 		if ( is_wp_error( $clause ) ) {
 			return self::$no_results;

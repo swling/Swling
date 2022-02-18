@@ -8,14 +8,16 @@ define('ABSPATH', __DIR__ . DIRECTORY_SEPARATOR);
 // 安装目录
 define('DIR_NAME', basename(__DIR__));
 
+define('WPINC', 'src/wp-core');
+
 // 自动加载器
 require ABSPATH . 'autoloader.php';
-require ABSPATH . 'src/wp-core/repair.php';
-require ABSPATH . 'src/wp-core/class-wpdb.php';
-require ABSPATH . 'src/wp-core/plugin.php';
+require ABSPATH . WPINC . '/repair.php';
+require ABSPATH . WPINC . '/class-wpdb.php';
+require ABSPATH . WPINC . '/plugin.php';
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
-define('DB_NAME', 'test');
+define('DB_NAME', 'sanks_wndwp');
 define('DB_USER', 'root');
 define('DB_PASSWORD', '');
 define('DB_HOST', 'localhost');
