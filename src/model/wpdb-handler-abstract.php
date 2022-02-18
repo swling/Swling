@@ -1,9 +1,10 @@
 <?php
-
 namespace Model;
 
 /**
- * 本类操作均针对单行
+ * 单行数据表操作抽象基类
+ * - 本类操作均针对单行
+ * - 在 wpdb 的基础上统一添加 Hook
  */
 abstract class WPDB_Handler_Abstract {
 
