@@ -8,9 +8,10 @@ namespace Model;
  */
 abstract class WPDB_Handler_Abstract {
 
-	protected $table_name;
-	protected $object_name;
 	protected $wpdb;
+	protected $table_name;
+	protected $primary_id_column;
+	protected $object_name;
 
 	public function __construct() {
 		global $wpdb;
