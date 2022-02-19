@@ -18,6 +18,30 @@ class WP_Query {
 	public $query_vars = [];
 
 	/**
+	 * Taxonomy query, as passed to get_tax_sql().
+	 *
+	 * @since 3.1.0
+	 * @var WP_Tax_Query A taxonomy query instance.
+	 */
+	public $tax_query;
+
+	/**
+	 * Metadata query container.
+	 *
+	 * @since 3.2.0
+	 * @var WP_Meta_Query A meta query instance.
+	 */
+	public $meta_query = false;
+
+	/**
+	 * Date query container.
+	 *
+	 * @since 3.7.0
+	 * @var WP_Date_Query A date query instance.
+	 */
+	public $date_query = false;
+
+	/**
 	 * Array of post objects or post IDs.
 	 *
 	 * @since 1.5.0
@@ -36,7 +60,26 @@ class WP_Query {
 		'order'          => 'DESC',
 	];
 
+	// $wpdb query args
+	private $wpdb             = '';
+	private $fields           = '';
+	private $found_rows       = '';
+	private $distinct         = '';
+	private $whichauthor      = '';
+	private $whichmimetype    = '';
+	private $where            = '';
+	private $limits           = '';
+	private $join             = '';
+	private $search           = '';
+	private $groupby          = '';
+	private $post_status_join = false;
+	private $page             = 1;
+	private $orderby          = '';
+
 	public function __construct(array $query) {
+		global $wpdb;
+		$this->wpdb = $wpdb;
+
 		$this->init_query_flags();
 		$this->parse_query($query);
 	}
@@ -91,83 +134,59 @@ class WP_Query {
 	}
 
 	public function get_posts() {
-		global $wpdb;
 
-		// First let's clear some variables.
-		$distinct         = '';
-		$whichauthor      = '';
-		$whichmimetype    = '';
-		$where            = '';
-		$limits           = '';
-		$join             = '';
-		$search           = '';
-		$groupby          = '';
-		$post_status_join = false;
-		$page             = 1;
-		$orderby          = '';
+		/**
+		 * Fires after the query variable object is created, but before the actual query is run.
+		 *
+		 * Note: If using conditional tags, use the method versions within the passed instance
+		 * (e.g. $this->is_main_query() instead of is_main_query()). This is because the functions
+		 * like is_main_query() test against the global $wp_query instance, not the passed one.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param WP_Query $query The WP_Query instance (passed by reference).
+		 */
+		do_action_ref_array('pre_get_posts', [&$this]);
 
-		$q = &$this->query_vars;
+		$wpdb = &$this->wpdb;
+		$q    = &$this->query_vars;
 		switch ($q['fields']) {
 			case 'ids':
-				$fields = "{$wpdb->posts}.ID";
+				$this->fields = "{$wpdb->posts}.ID";
 				break;
 			case 'id=>parent':
-				$fields = "{$wpdb->posts}.ID, {$wpdb->posts}.post_parent";
+				$this->fields = "{$wpdb->posts}.ID, {$wpdb->posts}.post_parent";
 				break;
 			default:
-				$fields = "{$wpdb->posts}.*";
+				$this->fields = "{$wpdb->posts}.*";
 		}
 
-		$found_rows = '';
 		if (!$q['no_found_rows'] && !empty($limits)) {
-			$found_rows = 'SQL_CALC_FOUND_ROWS';
+			$this->found_rows = 'SQL_CALC_FOUND_ROWS';
 		}
 
-		$where .= $this->get_post_filed_sql();
+		// Post Field Query
+		$this->handle_post_field_query();
 
 		// Tax Query
-		$this->tax_query = new WP_Tax_Query($q['tax_query']);
-		$clauses         = $this->tax_query->get_sql($wpdb->posts, 'ID');
-		$join .= $clauses['join'];
-		$where .= $clauses['where'];
+		$this->handle_tax_query();
 
 		// Parse meta query.
-		$this->meta_query = new WP_Meta_Query();
-		$this->meta_query->parse_query_vars($q);
-		if (!empty($this->meta_query->queries)) {
-			$clauses = $this->meta_query->get_sql('post', $wpdb->posts, 'ID', $this);
-			$join .= $clauses['join'];
-			$where .= $clauses['where'];
-		}
+		$this->handle_meta_query();
+
+		// Handle complex date queries.
+		$this->handle_date_query();
 
 		// If 'offset' is provided, it takes precedence over 'paged'.
-		if (isset($q['offset']) && is_numeric($q['offset'])) {
-			$q['offset'] = absint($q['offset']);
-			$pgstrt      = $q['offset'] . ', ';
-		} else {
-			$pgstrt = absint(($page - 1) * $q['posts_per_page']) . ', ';
-		}
-		$limits = 'LIMIT ' . $pgstrt . $q['posts_per_page'];
+		$this->handle_limits();
 
 		// Order
-		if (empty($q['orderby'])) {
-			$orderby = "{$wpdb->posts}.post_date " . $q['order'];
-		} elseif (!empty($q['order'])) {
-			// $orderby = "{$q['orderby']} {$q['order']}";
-		}
+		$this->handle_orderby();
 
-		if (!empty($this->tax_query->queries) || !empty($this->meta_query->queries)) {
-			$groupby = "{$wpdb->posts}.ID";
-		}
+		// Groupby
+		$this->handle_groupby();
 
-		if (!empty($groupby)) {
-			$groupby = 'GROUP BY ' . $groupby;
-		}
-		if (!empty($orderby)) {
-			$orderby = 'ORDER BY ' . $orderby;
-		}
-
-		$old_request   = "SELECT $found_rows $distinct $fields FROM {$wpdb->posts} $join WHERE 1=1 $where $groupby $orderby $limits";
+		$old_request   = "SELECT $this->found_rows $this->distinct $this->fields FROM {$wpdb->posts} $this->join WHERE 1=1 $this->where $this->groupby $this->orderby $this->limits";
 		$this->request = $old_request;
 
 		// excute sql query
@@ -175,18 +194,82 @@ class WP_Query {
 		return $this->posts;
 	}
 
-	private function get_post_filed_sql() {
-		global $wpdb;
-		$q     = &$this->query_vars;
-		$where = '';
+	private function handle_post_field_query() {
+		$wpdb = &$this->wpdb;
+		$q    = &$this->query_vars;
 		foreach ($q as $post_filed => $value) {
 			if (in_array($post_filed, ['post_status', 'post_type'])) {
-				$where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %s ", $value);
+				$this->where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %s ", $value);
 			} elseif (in_array($post_filed, ['p', 'post_author', 'post_parent'])) {
-				$where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %d ", $value);
+				$this->where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %d ", $value);
 			}
 		}
-
-		return $where;
 	}
+
+	private function handle_tax_query() {
+		$wpdb            = &$this->wpdb;
+		$q               = &$this->query_vars;
+		$this->tax_query = new WP_Tax_Query($q['tax_query']);
+		$clauses         = $this->tax_query->get_sql($wpdb->posts, 'ID');
+		$this->join .= $clauses['join'];
+		$this->where .= $clauses['where'];
+	}
+
+	private function handle_meta_query() {
+		$wpdb             = &$this->wpdb;
+		$q                = &$this->query_vars;
+		$this->meta_query = new WP_Meta_Query();
+		$this->meta_query->parse_query_vars($q);
+		if (!empty($this->meta_query->queries)) {
+			$clauses = $this->meta_query->get_sql('post', $wpdb->posts, 'ID', $this);
+			$this->join .= $clauses['join'];
+			$this->where .= $clauses['where'];
+		}
+	}
+
+	private function handle_date_query() {
+		$wpdb = &$this->wpdb;
+		$q    = &$this->query_vars;
+		if (!empty($q['date_query'])) {
+			$this->date_query = new WP_Date_Query($q['date_query']);
+			$this->where .= $this->date_query->get_sql();
+		}
+	}
+
+	private function handle_orderby() {
+		$wpdb = &$this->wpdb;
+		$q    = &$this->query_vars;
+		if (empty($q['orderby'])) {
+			$this->orderby = "{$wpdb->posts}.post_date " . $q['order'];
+		} elseif (!empty($q['order'])) {
+			// $orderby = "{$q['orderby']} {$q['order']}";
+		}
+
+		if (!empty($this->orderby)) {
+			$this->orderby = 'ORDER BY ' . $this->orderby;
+		}
+	}
+
+	private function handle_limits() {
+		$q = &$this->query_vars;
+		if (isset($q['offset']) && is_numeric($q['offset'])) {
+			$q['offset'] = absint($q['offset']);
+			$pgstrt      = $q['offset'] . ', ';
+		} else {
+			$pgstrt = absint(($this->page - 1) * $q['posts_per_page']) . ', ';
+		}
+		$this->limits = 'LIMIT ' . $pgstrt . $q['posts_per_page'];
+	}
+
+	private function handle_groupby() {
+		$wpdb = &$this->wpdb;
+		if (!empty($this->tax_query->queries) || !empty($this->meta_query->queries)) {
+			$this->groupby = "{$wpdb->posts}.ID";
+		}
+
+		if (!empty($this->groupby)) {
+			$this->groupby = 'GROUP BY ' . $this->groupby;
+		}
+	}
+
 }
