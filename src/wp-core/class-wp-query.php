@@ -146,7 +146,7 @@ class WP_Query {
 		 *
 		 * @param WP_Query $query The WP_Query instance (passed by reference).
 		 */
-		do_action_ref_array('pre_get_posts', [&$this]);
+		do_action_ref_array('pre_get_posts', [ & $this]);
 
 		$wpdb = &$this->wpdb;
 		$q    = &$this->query_vars;
@@ -198,10 +198,20 @@ class WP_Query {
 		$wpdb = &$this->wpdb;
 		$q    = &$this->query_vars;
 		foreach ($q as $post_filed => $value) {
-			if (in_array($post_filed, ['post_status', 'post_type'])) {
-				$this->where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %s ", $value);
-			} elseif (in_array($post_filed, ['p', 'post_author', 'post_parent'])) {
-				$this->where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %d ", $value);
+			if (in_array($post_filed, ['post_name', 'post_type', 'post_status', 'post_mime_type'])) {
+				if (is_array($value)) {
+					$value = "'" . implode("','", $value) . "'";
+					$this->where .= "AND {$wpdb->posts}.{$post_filed} IN ($value)";
+				} else {
+					$this->where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %s ", $value);
+				}
+			} elseif (in_array($post_filed, ['ID', 'post_author', 'post_parent'])) {
+				if (is_array($value)) {
+					$value = implode(',', $value);
+					$this->where .= " AND {$wpdb->posts}.{$post_filed} IN ($value) ";
+				} else {
+					$this->where .= $wpdb->prepare(" AND {$wpdb->posts}.{$post_filed} = %d ", $value);
+				}
 			}
 		}
 	}
