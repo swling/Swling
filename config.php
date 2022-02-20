@@ -9,10 +9,16 @@ define('ABSPATH', __DIR__ . DIRECTORY_SEPARATOR);
 define('DIR_NAME', basename(__DIR__));
 
 define('WPINC', 'src/wp-core');
+define('WP_CONTENT_DIR', 'content');
 
 // 自动加载器
 require ABSPATH . 'autoloader.php';
+
+// init
+require ABSPATH . WPINC . '/load.php';
 require ABSPATH . WPINC . '/repair.php';
+require ABSPATH . WPINC . '/functions.php';
+require ABSPATH . WPINC . '/formatting.php';
 require ABSPATH . WPINC . '/class-wpdb.php';
 require ABSPATH . WPINC . '/plugin.php';
 
@@ -52,3 +58,6 @@ require ABSPATH . 'src/wp-core/admin/dbDelta.php';
 if (isset($_GET['install'])) {
 	dbDelta('all');
 }
+
+// Start the WordPress object cache, or an external object cache if the drop-in is present.
+wp_start_object_cache();
