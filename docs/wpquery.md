@@ -151,4 +151,27 @@
 	 *     @type int             $year                    The four-digit year. Default empty. Accepts any four-digit year.
 	 * }
 	 */
-    ```
+```
+
+```php
+	// 将数组条件转为 or 查询 而非 in 查询的方法 
+	private function get_type_status_sql() {
+		$q    = &$this->query_vars;
+		$wpdb = &$this->wpdb;
+
+		$statuswheres = [];
+		$q_status     = $q['post_status'];
+		if (!is_array($q_status)) {
+			$q_status = explode(',', $q_status);
+		}
+
+		foreach ($q_status as $status) {
+			$statuswheres[] = "{$wpdb->posts}.post_status = '$status'";
+		}
+
+		$where_status = implode(' OR ', $statuswheres);
+		if (!empty($where_status)) {
+			$this->where .= " AND ($where_status)";
+		}
+	}
+```	

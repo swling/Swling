@@ -40,7 +40,7 @@ define('DB_COLLATE', '');
 define('WP_DEBUG', true);
 define('WP_DEBUG_DISPLAY', null);
 // define('WP_DEBUG_LOG', true);
-// define('SAVEQUERIES', true);
+define('SAVEQUERIES', true);
 
 // 实例化数据库连接
 $wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);

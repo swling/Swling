@@ -37,3 +37,6 @@
 
 https://stackoverflow.com/questions/50992188/how-to-push-a-shallow-clone-to-a-new-repo
 - git 子模块 https://www.jianshu.com/p/9000cd49822c https://zhuanlan.zhihu.com/p/97761640
+
+- 合并 wp_terms wp_term_taxonomy （将前者合并到后者） 
+https://www.zhihu.com/question/48691476

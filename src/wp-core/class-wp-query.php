@@ -194,12 +194,19 @@ class WP_Query {
 		return $this->posts;
 	}
 
+	/**
+	 * IN 比 OR 快？
+	 * @link https://stackoverflow.com/questions/782915/mysql-or-vs-in-performance
+	 *
+	 * 尚未执行 SQL 数据清洗
+	 **/
 	private function handle_post_field_query() {
 		$wpdb = &$this->wpdb;
 		$q    = &$this->query_vars;
 		foreach ($q as $post_filed => $value) {
 			if (in_array($post_filed, ['post_name', 'post_type', 'post_status', 'post_mime_type'])) {
 				if (is_array($value)) {
+					$value = array_map('esc_sql', $value);
 					$value = "'" . implode("','", $value) . "'";
 					$this->where .= "AND {$wpdb->posts}.{$post_filed} IN ($value)";
 				} else {
