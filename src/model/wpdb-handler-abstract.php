@@ -1,6 +1,8 @@
 <?php
 namespace Model;
 
+use Exception;
+
 /**
  * 单行数据表操作抽象基类
  * - 本类操作均针对单行
@@ -10,8 +12,9 @@ abstract class WPDB_Handler_Abstract {
 
 	protected $wpdb;
 	protected $table_name;
-	protected $primary_id_column;
 	protected $object_name;
+	protected $primary_id_column;
+	protected $required_columns = [];
 
 	public function __construct() {
 		global $wpdb;
@@ -21,7 +24,52 @@ abstract class WPDB_Handler_Abstract {
 		$this->table = $wpdb->$table_name;
 	}
 
-	final public function insert(array $data, array $format = []): int{
+	public function insert(array $data): int{
+		$this->check_data($data, false);
+
+		if (isset($data[$this->primary_id_column])) {
+			return $this->update_db($data, [$this->primary_id_column => $data[$this->primary_id_column]]);
+		} else {
+			return $this->insert_db($data);
+		}
+	}
+
+	public function get(int $ID): object{
+		$post = $this->get_db([$this->primary_id_column => $ID]);
+		return $post;
+	}
+
+	public function update(array $data): int{
+		$this->check_data($data, true);
+
+		return $this->insert_db($data);
+	}
+
+	public function delete(int $ID): int {
+		return $this->delete_db([$this->primary_id_column => $ID]);
+	}
+
+	private function check_data(array $data, bool $is_update) {
+		if ($is_update) {
+			if (!isset($post_data[$this->primary_id_column])) {
+				throw new Exception('Primary ID column are empty on update');
+			}
+
+			return;
+		}
+
+		if (!$this->required_columns) {
+			throw new Exception('Required columns have not been initialized');
+		}
+
+		foreach ($this->required_columns as $column) {
+			if (!isset($data[$column]) or !$data[$column]) {
+				throw new Exception('Required columns are empty');
+			}
+		}
+	}
+
+	private function insert_db(array $data, array $format = []): int{
 		$data = apply_filters("insert_{$this->object_name}_data", $data);
 
 		do_action("before_insert_{$this->object_name}", $data);
@@ -36,7 +84,7 @@ abstract class WPDB_Handler_Abstract {
 	}
 
 	// 需要设置安全过滤 prepare （未完成）
-	final public function get(array $where) {
+	private function get_db(array $where) {
 		// 数据钩子，可用于对象缓存拦截sql查询
 		$data = apply_filters("get_{$this->object_name}_data", false, $where);
 		if (false !== $data) {
@@ -70,7 +118,7 @@ abstract class WPDB_Handler_Abstract {
 		return $this->wpdb->get_row($sql);
 	}
 
-	final public function update(array $data, array $where, array $format = [], array $where_format = []) {
+	private function update_db(array $data, array $where, array $format = [], array $where_format = []) {
 		$data = apply_filters("update_{$this->object_name}_data", $data);
 
 		do_action("before_update_{$this->object_name}", $data);
@@ -84,7 +132,7 @@ abstract class WPDB_Handler_Abstract {
 		return $update;
 	}
 
-	final public function delete(array $where, array $where_format = []) {
+	private function delete_db(array $where, array $where_format = []) {
 		do_action("before_delete_{$this->object_name}", $where);
 
 		$delete = $this->wpdb->delete($this->table, $where, $where_format);
@@ -92,5 +140,7 @@ abstract class WPDB_Handler_Abstract {
 		if ($delete) {
 			do_action("after_delete_{$this->object_name}", $where);
 		}
+
+		return $delete;
 	}
 }
