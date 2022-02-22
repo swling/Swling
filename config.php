@@ -18,9 +18,12 @@ require ABSPATH . 'autoloader.php';
 require ABSPATH . WPINC . '/load.php';
 require ABSPATH . WPINC . '/repair.php';
 require ABSPATH . WPINC . '/functions.php';
-require ABSPATH . WPINC . '/formatting.php';
+// require ABSPATH . WPINC . '/formatting.php';
 require ABSPATH . WPINC . '/class-wpdb.php';
 require ABSPATH . WPINC . '/plugin.php';
+
+// 计时
+timer_start();
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
 define('DB_NAME', 'sanks_wndwp');
