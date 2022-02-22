@@ -357,6 +357,12 @@ class WP_Term_Query {
 		// Meta Query
 		$this->parse_meta_query();
 
+		// Search Name / Slug
+		$search = $this->query_vars['search'] ?? '';
+		if ($search) {
+			$this->get_search_sql($search);
+		}
+
 		// Order By
 		$this->parse_orderby();
 
@@ -643,7 +649,7 @@ class WP_Term_Query {
 
 		$like = '%' . $wpdb->esc_like($string) . '%';
 
-		return $wpdb->prepare('((t.name LIKE %s) OR (t.slug LIKE %s))', $like, $like);
+		$this->sql_clauses['where'] .= $wpdb->prepare('AND ((name LIKE %s) OR (slug LIKE %s))', $like, $like);
 	}
 
 	/**
