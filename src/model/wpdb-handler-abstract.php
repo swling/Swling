@@ -53,13 +53,22 @@ abstract class WPDB_Handler_Abstract {
 	 * @return object data object
 	 */
 	public function get(int $ID): object{
-		$where = [$this->primary_id_column => $ID];
-		return $this->get_by($where);
+		$data = wp_cache_get($ID, $this->table_name);
+		if (false !== $data) {
+			return $data;
+		}
+
+		$data = $this->get_by([$this->primary_id_column => $ID]);
+		if ($data) {
+			wp_cache_set($ID, $data, $this->table_name);
+		}
+
+		return $data;
 	}
 
 	/**
 	 * get data by column
-	 *
+	 *（需要完善对象缓存，对于复杂查询统一调用 WP_XXX_Query，并在 WP_XXX_Query 中统一缓存）
 	 * @return object data object
 	 */
 	public function get_by(array $where): object{
@@ -86,7 +95,7 @@ abstract class WPDB_Handler_Abstract {
 		$sql        = "SELECT * FROM `$this->table` WHERE $conditions";
 		$data       = (object) $this->wpdb->get_row($sql);
 
-		// Action 获取成功：可用于设置对象缓存
+		// get data success
 		if ($data) {
 			do_action("get_{$this->object_name}_data_success", $data, $where);
 		}
@@ -108,6 +117,9 @@ abstract class WPDB_Handler_Abstract {
 		$update = $this->wpdb->update($this->table, $data, $where);
 		if ($update) {
 			do_action("after_update_{$this->object_name}", $data, $where);
+
+			// Delete Object Cache
+			wp_cache_delete($data[$this->primary_id_column], $this->table_name);
 		}
 
 		return $update;
@@ -125,6 +137,9 @@ abstract class WPDB_Handler_Abstract {
 		$delete = $this->wpdb->delete($this->table, $where);
 		if ($delete) {
 			do_action("after_delete_{$this->object_name}", $where);
+
+			// Delete Object Cache
+			wp_cache_delete($ID, $this->table_name);
 		}
 
 		return $delete;
@@ -136,8 +151,8 @@ abstract class WPDB_Handler_Abstract {
 	 */
 	private function check_data(array $data, bool $is_update) {
 		if ($is_update) {
-			if (!isset($post_data[$this->primary_id_column])) {
-				throw new Exception('Primary ID column are empty on update');
+			if (!isset($data[$this->primary_id_column])) {
+				throw new Exception('Primary ID column are empty on update: ' . $this->primary_id_column);
 			}
 
 			return;
