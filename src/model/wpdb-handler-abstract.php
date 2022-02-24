@@ -41,7 +41,7 @@ abstract class WPDB_Handler_Abstract {
 		$this->check_data($data, false);
 		$insert = $this->wpdb->insert($this->table, $data);
 		if ($insert) {
-			do_action("after_insert_{$this->object_name}", $this->wpdb->insert_id, $data);
+			do_action("after_{$this->object_name}_inserted", $this->wpdb->insert_id, $data);
 		}
 
 		return $this->wpdb->insert_id;
@@ -113,13 +113,16 @@ abstract class WPDB_Handler_Abstract {
 		do_action("before_update_{$this->object_name}", $data);
 
 		$this->check_data($data, true);
-		$where  = [$this->primary_id_column => $data[$this->primary_id_column]];
+		$ID            = $data[$this->primary_id_column] ?? 0;
+		$object_before = $this->get($ID);
+
+		$where  = [$this->primary_id_column => $ID];
 		$update = $this->wpdb->update($this->table, $data, $where);
 		if ($update) {
-			do_action("after_update_{$this->object_name}", $data, $where);
+			wp_cache_delete($ID, $this->table_name);
 
-			// Delete Object Cache
-			wp_cache_delete($data[$this->primary_id_column], $this->table_name);
+			$object_after = $this->get($ID);
+			do_action("after_{$this->object_name}_updated", $ID, $object_after, $object_before, $where);
 		}
 
 		return $update;
@@ -136,10 +139,9 @@ abstract class WPDB_Handler_Abstract {
 
 		$delete = $this->wpdb->delete($this->table, $where);
 		if ($delete) {
-			do_action("after_delete_{$this->object_name}", $where);
-
-			// Delete Object Cache
 			wp_cache_delete($ID, $this->table_name);
+
+			do_action("after_{$this->object_name}_deleted", $where);
 		}
 
 		return $delete;
