@@ -22,6 +22,21 @@ function __($text): string {
 	return $text;
 }
 
+function _x($text): string {
+	return $text;
+}
+
+function _n_noop($singular, $plural, $domain = null) {
+	return [
+		0          => $singular,
+		1          => $plural,
+		'singular' => $singular,
+		'plural'   => $plural,
+		'context'  => null,
+		'domain'   => $domain,
+	];
+}
+
 function is_wp_error() {
 	return false;
 }

@@ -21,12 +21,15 @@ require ABSPATH . WPINC . '/functions.php';
 // require ABSPATH . WPINC . '/formatting.php';
 require ABSPATH . WPINC . '/class-wpdb.php';
 require ABSPATH . WPINC . '/plugin.php';
+require ABSPATH . WPINC . '/taxonomy.php';
+require ABSPATH . WPINC . '/post.php';
 
 // 计时
 timer_start();
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
-define('DB_NAME', 'sanks_wndwp');
+// define('DB_NAME', 'sanks_wndwp');
+define('DB_NAME', 'wordpress_dev');
 define('DB_USER', 'root');
 define('DB_PASSWORD', '');
 define('DB_HOST', 'localhost');
@@ -64,3 +67,9 @@ if (isset($_GET['install'])) {
 
 // Start the WordPress object cache, or an external object cache if the drop-in is present.
 wp_start_object_cache();
+
+// Taxonomy
+create_initial_taxonomies();
+
+// Post Type
+create_initial_post_types();

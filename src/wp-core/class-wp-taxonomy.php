@@ -71,6 +71,14 @@ final class WP_Taxonomy {
 	public $hierarchical = false;
 
 	/**
+	 * Whether to generate and allow a UI for managing terms in this taxonomy in the admin.
+	 *
+	 * @since 4.7.0
+	 * @var bool
+	 */
+	public $show_ui = true;
+
+	/**
 	 * An array of object types this taxonomy is registered for.
 	 *
 	 * @since 4.7.0
@@ -188,6 +196,7 @@ final class WP_Taxonomy {
 			'public'                => true,
 			'publicly_queryable'    => null,
 			'hierarchical'          => false,
+			'show_ui'               => null,
 			'capabilities'          => [],
 			'query_var'             => $this->name,
 			'update_count_callback' => '',
@@ -198,6 +207,11 @@ final class WP_Taxonomy {
 		];
 
 		$args = array_merge($defaults, $args);
+
+		// If not set, default to the setting for 'public'.
+		if (null === $args['show_ui']) {
+			$args['show_ui'] = $args['public'];
+		}
 
 		// If not set, default to the setting for 'public'.
 		if (null === $args['publicly_queryable']) {

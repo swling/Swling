@@ -336,3 +336,45 @@ function is_taxonomy_hierarchical($taxonomy) {
 	$taxonomy = get_taxonomy($taxonomy);
 	return $taxonomy->hierarchical;
 }
+
+/**
+ * Add an already registered taxonomy to an object type.
+ *
+ * @since 3.0.0
+ *
+ * @global WP_Taxonomy[] $wp_taxonomies The registered taxonomies.
+ *
+ * @param string $taxonomy    Name of taxonomy object.
+ * @param string $object_type Name of the object type.
+ * @return bool True if successful, false if not.
+ */
+function register_taxonomy_for_object_type($taxonomy, $object_type) {
+	global $wp_taxonomies;
+
+	if (!isset($wp_taxonomies[$taxonomy])) {
+		return false;
+	}
+
+	if (!get_post_type_object($object_type)) {
+		return false;
+	}
+
+	if (!in_array($object_type, $wp_taxonomies[$taxonomy]->object_type, true)) {
+		$wp_taxonomies[$taxonomy]->object_type[] = $object_type;
+	}
+
+	// Filter out empties.
+	$wp_taxonomies[$taxonomy]->object_type = array_filter($wp_taxonomies[$taxonomy]->object_type);
+
+	/**
+	 * Fires after a taxonomy is registered for an object type.
+	 *
+	 * @since 5.1.0
+	 *
+	 * @param string $taxonomy    Taxonomy name.
+	 * @param string $object_type Name of the object type.
+	 */
+	do_action('registered_taxonomy_for_object_type', $taxonomy, $object_type);
+
+	return true;
+}
