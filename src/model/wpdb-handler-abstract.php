@@ -38,7 +38,7 @@ abstract class WPDB_Handler_Abstract {
 		$data = apply_filters("insert_{$this->object_name}_data", $data);
 		do_action("before_insert_{$this->object_name}", $data);
 
-		$this->check_data($data, false);
+		$this->check_insert_data($data);
 		$insert = $this->wpdb->insert($this->table, $data);
 		if ($insert) {
 			do_action("after_{$this->object_name}_inserted", $this->wpdb->insert_id, $data);
@@ -112,7 +112,7 @@ abstract class WPDB_Handler_Abstract {
 		$data = apply_filters("update_{$this->object_name}_data", $data);
 		do_action("before_update_{$this->object_name}", $data);
 
-		$this->check_data($data, true);
+		$this->check_update_data($data);
 		$ID            = $data[$this->primary_id_column] ?? 0;
 		$object_before = $this->get($ID);
 
@@ -149,22 +149,8 @@ abstract class WPDB_Handler_Abstract {
 
 	/**
 	 * check insert data
-	 * check update data
 	 */
-	private function check_data(array $data, bool $is_update) {
-		if ($is_update) {
-			$ID = $data[$this->primary_id_column] ?? 0;
-			if (!$ID) {
-				throw new Exception('Primary ID column are empty on update: ' . $this->primary_id_column);
-			}
-
-			if (!$this->get($ID)) {
-				throw new Exception('Primary ID is invalid');
-			}
-
-			return;
-		}
-
+	private function check_insert_data(array $data) {
 		if (!$this->required_columns) {
 			throw new Exception('Required columns have not been initialized');
 		}
@@ -173,6 +159,20 @@ abstract class WPDB_Handler_Abstract {
 			if (!isset($data[$column]) or !$data[$column]) {
 				throw new Exception('Required columns are empty');
 			}
+		}
+	}
+
+	/**
+	 * check update data
+	 */
+	private function check_update_data(array $data) {
+		$ID = $data[$this->primary_id_column] ?? 0;
+		if (!$ID) {
+			throw new Exception('Primary ID column are empty on update: ' . $this->primary_id_column);
+		}
+
+		if (!$this->get($ID)) {
+			throw new Exception('Primary ID is invalid');
 		}
 	}
 }
