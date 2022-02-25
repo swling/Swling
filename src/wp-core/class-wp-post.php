@@ -218,9 +218,14 @@ final class WP_Post {
 	 * @param int $post_id Post ID.
 	 * @return WP_Post|false Post object, false otherwise.
 	 */
-	public static function get_instance(int $post_id): object{
+	public static function get_instance(int $post_id) {
 		$handler = new Model\WPDB_Handler_Post;
 		$post    = $handler->get($post_id);
+
+		if (!$post) {
+			return $post;
+		}
+
 		return new WP_Post($post);
 	}
 

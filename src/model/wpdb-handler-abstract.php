@@ -50,9 +50,9 @@ abstract class WPDB_Handler_Abstract {
 	/**
 	 * get data by primary id
 	 *
-	 * @return object data object
+	 * @return object|false
 	 */
-	public function get(int $ID): object{
+	public function get(int $ID) {
 		$data = wp_cache_get($ID, $this->table_name);
 		if (false !== $data) {
 			return $data;
@@ -69,9 +69,9 @@ abstract class WPDB_Handler_Abstract {
 	/**
 	 * get data by column
 	 *（需要完善对象缓存，对于复杂查询统一调用 WP_XXX_Query，并在 WP_XXX_Query 中统一缓存）
-	 * @return object data object
+	 * @return object|false
 	 */
-	public function get_by(array $where): object{
+	public function get_by(array $where) {
 		$data = apply_filters("get_{$this->object_name}_data", false, $where);
 		if (false !== $data) {
 			return $data;
@@ -93,20 +93,20 @@ abstract class WPDB_Handler_Abstract {
 		}
 		$conditions = implode(' AND ', $conditions);
 		$sql        = "SELECT * FROM `$this->table` WHERE $conditions";
-		$data       = (object) $this->wpdb->get_row($sql);
+		$data       = $this->wpdb->get_row($sql);
 
 		// get data success
 		if ($data) {
 			do_action("get_{$this->object_name}_data_success", $data, $where);
 		}
 
-		return $data;
+		return $data ? (object) $data : false;
 	}
 
 	/**
 	 * update data by primary id
 	 *
-	 * @return int — The number of rows updated, 0 on error.
+	 * @return int The primary id on success. The value 0 on failure.
 	 */
 	public function update(array $data): int{
 		$data = apply_filters("update_{$this->object_name}_data", $data);
@@ -125,13 +125,13 @@ abstract class WPDB_Handler_Abstract {
 			do_action("after_{$this->object_name}_updated", $ID, $object_after, $object_before, $where);
 		}
 
-		return $update;
+		return $update ? $ID : 0;
 	}
 
 	/**
 	 * delete data by primary id
 	 *
-	 * @return int — The number of rows updated, 0 on error.
+	 * @return int The primary id on success. The value 0 on failure.
 	 */
 	public function delete(int $ID): int{
 		$where = [$this->primary_id_column => $ID];
@@ -144,17 +144,22 @@ abstract class WPDB_Handler_Abstract {
 			do_action("after_{$this->object_name}_deleted", $where);
 		}
 
-		return $delete;
+		return $delete ? $ID : 0;
 	}
 
 	/**
-	 * check data
-	 *
+	 * check insert data
+	 * check update data
 	 */
 	private function check_data(array $data, bool $is_update) {
 		if ($is_update) {
-			if (!isset($data[$this->primary_id_column])) {
+			$ID = $data[$this->primary_id_column] ?? 0;
+			if (!$ID) {
 				throw new Exception('Primary ID column are empty on update: ' . $this->primary_id_column);
+			}
+
+			if (!$this->get($ID)) {
+				throw new Exception('Primary ID is invalid');
 			}
 
 			return;

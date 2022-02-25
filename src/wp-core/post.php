@@ -620,3 +620,74 @@ function get_post_stati($args = [], $output = 'names', $operator = 'and') {
 
 	return wp_filter_object_list($wp_post_statuses, $args, $operator, $field);
 }
+
+################################################################################## 以下为重构函数
+
+/**
+ * Insert or update a post.
+ *
+ * If the $postarr parameter has 'ID' set to a value, then post will be updated.
+ *
+ * @since 1.0.0
+ *
+ * @param array $postarr {
+ *     An array of elements that make up a post to update or insert.
+ *
+ * @return int The post ID on success. The value 0 on failure.
+ */
+function wp_insert_post(array $postarr): int{
+	$handler = new Model\WPDB_Handler_Post;
+	return $handler->insert($postarr);
+}
+
+/**
+ * Retrieves post data given a post ID or post object.
+ *
+ * @since 1.5.1
+ *
+ * @global WP_Post $post Global post object.
+ *
+ * @param int|WP_Post|null $post   Optional. Post ID. Defaults to global $post.
+ * @return WP_Post|false           a `WP_Post` instance is returned or false on failure.
+ */
+function get_post(int $post_id = 0) {
+	if (empty($post) && isset($GLOBALS['post'])) {
+		$post = $GLOBALS['post'];
+	}
+
+	return WP_Post::get_instance($post_id);
+}
+
+/**
+ * Update a post with new post data.
+ *
+ * The date does not have to be set for drafts. You can set the date and it will
+ * not be overridden.
+ *
+ * @since 1.0.0
+ * @param array|object $postarr          Optional. Post data. Arrays are expected to be escaped,
+ *                                       objects are not. See wp_insert_post() for accepted arguments.
+ *                                       Default array.
+ * @return int The post ID on success. The value 0 on failure.
+ */
+function wp_update_post(array $postarr): int{
+	$handler = new Model\WPDB_Handler_Post;
+	return $handler->update($postarr);
+}
+
+/**
+ * Trash or delete a post or page.
+ * @param int  $postid       Post ID
+ * @param bool $force_delete Optional. Whether to bypass Trash and force deletion.
+ *
+ * @return int Post ID, 0 on error.
+ */
+function wp_delete_post(int $post_id, bool $force_delete = false): int{
+	$post = get_post($post_id);
+	if (!$post) {
+		return 0;
+	}
+
+	$handler = new Model\WPDB_Handler_Post;
+	return $handler->delete($post->ID);
+}
