@@ -16,6 +16,13 @@ abstract class WPDB_Handler_Abstract {
 	protected $primary_id_column;
 	protected $required_columns = [];
 
+	protected static $last_changed_key = 'last_changed';
+
+	/**
+	 * Constructer
+	 *
+	 * Init
+	 */
 	public function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
@@ -41,6 +48,8 @@ abstract class WPDB_Handler_Abstract {
 		$this->check_insert_data($data);
 		$insert = $this->wpdb->insert($this->table, $data);
 		if ($insert) {
+			$this->refresh_db_table_last_changed();
+
 			do_action("after_{$this->object_name}_inserted", $this->wpdb->insert_id, $data);
 		}
 
@@ -120,6 +129,7 @@ abstract class WPDB_Handler_Abstract {
 		$update = $this->wpdb->update($this->table, $data, $where);
 		if ($update) {
 			wp_cache_delete($ID, $this->table_name);
+			$this->refresh_db_table_last_changed();
 
 			$object_after = $this->get($ID);
 			do_action("after_{$this->object_name}_updated", $ID, $object_after, $object_before, $where);
@@ -140,6 +150,7 @@ abstract class WPDB_Handler_Abstract {
 		$delete = $this->wpdb->delete($this->table, $where);
 		if ($delete) {
 			wp_cache_delete($ID, $this->table_name);
+			$this->refresh_db_table_last_changed();
 
 			do_action("after_{$this->object_name}_deleted", $where);
 		}
@@ -174,5 +185,39 @@ abstract class WPDB_Handler_Abstract {
 		if (!$this->get($ID)) {
 			throw new Exception('Primary ID is invalid');
 		}
+	}
+
+	/**
+	 * Refresh last changed date for DB Table
+	 */
+	private function refresh_db_table_last_changed() {
+		wp_cache_set(static::$last_changed_key, microtime(), $this->table_name);
+	}
+
+	/**
+	 * Gets last changed date for the current DB table.
+	 *
+	 * @param string $group Where the cache contents are grouped.
+	 * @return string UNIX timestamp with microseconds representing when the group was last changed.
+	 */
+	public function get_current_db_table_last_changed(): string {
+		return static::get_db_table_last_changed($this->table_name);
+	}
+
+	/**
+	 * Gets last changed date for the specified DB table.
+	 *
+	 * @param string $group Where the cache contents are grouped.
+	 * @return string UNIX timestamp with microseconds representing when the group was last changed.
+	 */
+	public static function get_db_table_last_changed(string $table_name): string{
+		$last_changed = wp_cache_get(static::$last_changed_key, $table_name);
+
+		if (!$last_changed) {
+			$last_changed = microtime();
+			wp_cache_set(static::$last_changed_key, $last_changed, $table_name);
+		}
+
+		return $last_changed;
 	}
 }
