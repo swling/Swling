@@ -43,7 +43,7 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 
 			// none hierarchical Taxonomy ：check name
 		} elseif (get_term_by('name', $data['name'], $taxonomy)) {
-			throw new Exception(__('A term with the name provided already exists with this parent.'));
+			throw new Exception(__('A term with the name provided already exists.'));
 		}
 	}
 
@@ -51,13 +51,39 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 		// Term common check
 		static::common_check($data);
 
+		$slug     = $data['slug'];
+		$taxonomy = $data['taxonomy'];
+		$parent   = (int) $data['parent'];
+		$term_id  = $data['term_id'];
+
 		// Check for duplicate slug.
-		$slug      = $data['slug'];
-		$taxonomy  = $data['taxonomy'];
-		$term_id   = $data['term_id'];
 		$duplicate = get_term_by('slug', $slug, $taxonomy);
-		if ($duplicate and $duplicate->term_id !== $term_id) {
+		if ($duplicate and $duplicate->term_id != $term_id) {
 			throw new Exception('duplicate_term_slug ' . $slug);
+		}
+
+		// hierarchical Taxonomy ：check siblings duplicate name
+		if (is_taxonomy_hierarchical($taxonomy)) {
+			$siblings = get_terms(
+				[
+					'taxonomy' => $taxonomy,
+					'parent'   => $parent,
+					'name'     => $data['name'],
+				]
+			);
+
+			foreach ($siblings as $term) {
+				if ($term->term_id != $term_id) {
+					throw new Exception(__('A term with the name provided already exists with this parent.'));
+				}
+			}
+
+			// none hierarchical Taxonomy ：check duplicate name
+		} else {
+			$duplicate = get_term_by('name', $data['name'], $taxonomy);
+			if ($duplicate and $duplicate->term_id != $term_id) {
+				throw new Exception(__('A term with the name provided already exists.'));
+			}
 		}
 	}
 
