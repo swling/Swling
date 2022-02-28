@@ -147,3 +147,30 @@ function timer_stop($display = 0, $precision = 3) {
 	}
 	return $r;
 }
+
+/**
+ * Checks whether the given variable is a WordPress Error.
+ *
+ * Returns whether `$thing` is an instance of the `WP_Error` class.
+ *
+ * @since 2.1.0
+ *
+ * @param mixed $thing The variable to check.
+ * @return bool Whether the variable is an instance of WP_Error.
+ */
+function is_wp_error($thing) {
+	$is_wp_error = ($thing instanceof WP_Error);
+
+	if ($is_wp_error) {
+		/**
+		 * Fires when `is_wp_error()` is called and its parameter is an instance of `WP_Error`.
+		 *
+		 * @since 5.6.0
+		 *
+		 * @param WP_Error $thing The error object passed to `is_wp_error()`.
+		 */
+		do_action('is_wp_error_instance', $thing);
+	}
+
+	return $is_wp_error;
+}

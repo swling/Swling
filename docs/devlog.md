@@ -38,5 +38,8 @@
 https://stackoverflow.com/questions/50992188/how-to-push-a-shallow-clone-to-a-new-repo
 - git 子模块 https://www.jianshu.com/p/9000cd49822c https://zhuanlan.zhihu.com/p/97761640
 
-- 合并 wp_terms wp_term_taxonomy （将前者合并到后者） 
-https://www.zhihu.com/question/48691476
+- 合并 wp_terms wp_term_taxonomy （将后者字段合并到前者：taxonomy、description、parent、count） https://www.zhihu.com/question/48691476
+- 合并后将无法使用友情链接分类
+- 需要注意层级分类法，和标签分类法 设置的区别 https://wndwp.com/archives/94
+
+- 函数出错若需包含信息，返回 wp_error 类中 抛出异常

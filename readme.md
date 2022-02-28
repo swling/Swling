@@ -1,6 +1,8 @@
 @date 2022.02.11
 @author Swling tangfou@gmail.com
 
+# WP Framework
+
 从08年使用WordPress至今，18年开始自学开发，19年开始开发基于WordPress的前端插件 wnd-frontend ，最终尝试完全从零开发一个属于自己的 php 框架。
 显然，框架核心理念甚至代码段主要来自 WordPress 内核，及 wnd-frontend 插件。
 
@@ -13,6 +15,7 @@ WP 面向广大普通用户。本项目主要面向具有WP使用经验，同时
 
 - https://WordPress.org
 - https://github.com/swling/wnd-frontend
+- https://github.com/swling/WP-Framework
 
 ## 核心功能
 数据库参考 WP 针对性能优化，做适当修改

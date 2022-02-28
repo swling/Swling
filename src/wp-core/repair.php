@@ -37,10 +37,6 @@ function _n_noop($singular, $plural, $domain = null) {
 	];
 }
 
-function is_wp_error() {
-	return false;
-}
-
 // ***************************************************************************************************************** //
 /**
  * Set the mbstring internal encoding to a binary safe encoding when func_overload
@@ -245,6 +241,46 @@ function esc_sql($data) {
 
 function esc_html($text) {
 	return $text;
+}
+
+function esc_js($text) {
+	return $text;
+}
+
+function esc_attr($text) {
+	return $text;
+}
+
+function sanitize_title($text) {
+	return $text;
+}
+
+/**
+ * Adds slashes to a string or recursively adds slashes to strings within an array.
+ *
+ * This should be used when preparing data for core API that expects slashed data.
+ * This should not be used to escape data going directly into an SQL query.
+ *
+ * @since 3.6.0
+ * @since 5.5.0 Non-string values are left untouched.
+ *
+ * @param string|array $value String or array of data to slash.
+ * @return string|array Slashed `$value`.
+ */
+function wp_slash($value) {
+	if (is_array($value)) {
+		$value = array_map('wp_slash', $value);
+	}
+
+	if (is_string($value)) {
+		return addslashes($value);
+	}
+
+	return $value;
+}
+
+function wp_unslash($text) {
+	return stripslashes($text);
 }
 
 function _doing_it_wrong($function, $message, $version) {

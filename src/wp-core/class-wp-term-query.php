@@ -62,7 +62,7 @@ class WP_Term_Query {
 	 * @since 4.6.0
 	 * @var array
 	 */
-	public $query_vars;
+	public $query_vars = [];
 
 	/**
 	 * Default values for query vars.
@@ -228,9 +228,7 @@ class WP_Term_Query {
 			'meta_compare'           => '',
 		];
 
-		if (!empty($query)) {
-			$this->query($query);
-		}
+		$this->parse_query(wp_parse_args($query, $this->query_var_defaults));
 	}
 
 	/**
@@ -303,9 +301,12 @@ class WP_Term_Query {
 	 * @return WP_Term[]|int[]|string[]|string Array of terms, or number of terms as numeric string
 	 *                                         when 'count' is passed as a query var.
 	 */
-	public function query($query) {
-		$this->query_vars = wp_parse_args($query);
-		// return $this->get_terms();
+	public function query(array $args = []) {
+		if (!empty($args)) {
+			$this->parse_query($args);
+		}
+
+		return $this->get_terms();
 	}
 
 	/**
@@ -346,8 +347,6 @@ class WP_Term_Query {
 	 *                                         when 'count' is passed as a query var.
 	 */
 	public function get_terms() {
-		$this->parse_query($this->query_vars);
-
 		// Join Object IDs
 		$this->parse_object_ids();
 

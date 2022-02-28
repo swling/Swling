@@ -23,6 +23,7 @@ require ABSPATH . WPINC . '/class-wpdb.php';
 require ABSPATH . WPINC . '/plugin.php';
 require ABSPATH . WPINC . '/taxonomy.php';
 require ABSPATH . WPINC . '/post.php';
+require ABSPATH . WPINC . '/term.php';
 
 // 计时
 timer_start();
