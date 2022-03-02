@@ -91,10 +91,10 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 	 * Term common check
 	 */
 	private function common_check(array $data) {
-		$taxonomy = $data['taxonomy'];
-		$parent   = (int) $data['parent'];
+		$taxonomy = $data['taxonomy'] ?? '';
+		$parent   = (int) ($data['parent'] ?? 0);
 
-		if (!taxonomy_exists($taxonomy)) {
+		if ($taxonomy and !taxonomy_exists($taxonomy)) {
 			throw new Exception(__('Invalid taxonomy.'));
 		}
 

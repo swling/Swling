@@ -112,9 +112,10 @@ abstract class WPDB_Handler_Abstract {
 		$data = apply_filters("update_{$this->object_name}_data", $data);
 		do_action("before_update_{$this->object_name}", $data);
 
-		$this->_check_update_data($data);
 		$ID            = $data[$this->primary_id_column] ?? 0;
 		$object_before = $this->get($ID);
+		$data          = array_merge((array) $object_before, $data);
+		$this->_check_update_data($data);
 
 		$where  = [$this->primary_id_column => $ID];
 		$update = $this->wpdb->update($this->table, $data, $where);
