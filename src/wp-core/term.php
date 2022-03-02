@@ -40,18 +40,13 @@
  *     @type int    $parent      The id of the parent term. Default 0.
  *     @type string $slug        The term slug to use. Default empty string.
  * }
- * @return array|WP_Error {
- *     An array of the new term data, WP_Error otherwise.
- *
- *     @type int        $term_id          The new term ID.
- *     @type int|string $term_taxonomy_id The new term taxonomy ID. Can be a numeric string.
- * }
+ * @return int|WP_Error          The new term ID., WP_Error otherwise.
  */
 function wp_insert_term(string $term, string $taxonomy, array $args = []) {
 	$defaults = [
 		'description' => '',
 		'parent'      => 0,
-		'slug'        => '',
+		'slug'        => $term,
 	];
 	$args = wp_parse_args($args, $defaults);
 
@@ -64,7 +59,7 @@ function wp_insert_term(string $term, string $taxonomy, array $args = []) {
 		$handler = new Model\WPDB_Handler_Term;
 		return $handler->insert($args);
 	} catch (Exception $e) {
-		return new WP_Error('term_insert_error', $e->getMessage());
+		return new WP_Error(__FUNCTION__, $e->getMessage());
 	}
 }
 
@@ -114,7 +109,7 @@ function wp_update_term(int $term_id, string $taxonomy, array $args = []) {
 		$handler = new Model\WPDB_Handler_Term;
 		return $handler->update($args);
 	} catch (Exception $e) {
-		return new WP_Error('term_update_error', $e->getMessage());
+		return new WP_Error(__FUNCTION__, $e->getMessage());
 	}
 }
 
@@ -275,7 +270,7 @@ function get_terms(array $args = []) {
 	if (!empty($args['taxonomy'])) {
 		foreach ($args['taxonomy'] as $taxonomy) {
 			if (!taxonomy_exists($taxonomy)) {
-				return new WP_Error('invalid_taxonomy', __('Invalid taxonomy.'));
+				return new WP_Error(__FUNCTION__, __('Invalid taxonomy.'));
 			}
 		}
 	}
@@ -308,4 +303,113 @@ function get_terms(array $args = []) {
 	 * @param WP_Term_Query $term_query The WP_Term_Query object.
 	 */
 	return apply_filters('get_terms', $terms, $term_query->query_vars['taxonomy'], $term_query->query_vars, $term_query);
+}
+
+/**
+ * Create Term and Taxonomy Relationships.
+ *
+ * Relates an object (post, link etc) to a term and taxonomy type. Creates the
+ * term and taxonomy relationship if it doesn't already exist. Creates a term if
+ * it doesn't exist (using the slug).
+ *
+ * A relationship means that the term is grouped in or belongs to the taxonomy.
+ * A term has no meaning until it is given context by defining which taxonomy it
+ * exists under.
+ *
+ * @since 2.3.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @param int              $object_id The object to relate to.
+ * @param array $terms     array of either term slugs or IDs.
+ *                                    Will replace all existing related terms in this taxonomy. Passing an
+ *                                    empty value will remove all related terms.
+ * @param string           $taxonomy  The context in which to relate the term to the object.
+ * @param bool             $append    Optional. If false will delete difference of terms. Default false.
+ * @return array|WP_Error Term taxonomy IDs of the affected terms or WP_Error on failure.
+ */
+function wp_set_object_terms(int $object_id, array $terms, string $taxonomy, bool $append = false) {
+	try {
+		$handler = new Model\Term_Relationships_Handler;
+		return $handler->set_object_terms($object_id, $terms, $taxonomy, $append);
+	} catch (Exception $e) {
+		return new WP_Error(__FUNCTION__, $e->getMessage());
+	}
+}
+
+/**
+ * Retrieves the terms associated with the given object(s), in the supplied taxonomies.
+ *
+ * @param int|int[]       $object_ids The ID(s) of the object(s) to retrieve.
+ * @param string|string[] $taxonomies The taxonomy names to retrieve terms from.
+ * @param array|string    $args       See WP_Term_Query::__construct() for supported arguments.
+ * @return WP_Term[]|WP_Error Array of terms or empty array if no terms found.
+ *                            WP_Error if any of the taxonomies don't exist.
+ */
+function wp_get_object_terms(int $object_id, string $taxonomy, array $args = []) {
+	try {
+		$handler = new Model\Term_Relationships_Handler;
+		return $handler->get_object_terms($object_id, $taxonomy, $args);
+	} catch (Exception $e) {
+		return new WP_Error(__FUNCTION__, $e->getMessage());
+	}
+}
+
+/**
+ * Add term(s) associated with a given object.
+ *
+ * @since 3.6.0
+ *
+ * @param int              $object_id The ID of the object to which the terms will be added.
+ * @param string|int|array $terms     The slug(s) or ID(s) of the term(s) to add.
+ * @param array|string     $taxonomy  Taxonomy name.
+ * @return array|WP_Error Term taxonomy IDs of the affected terms.
+ */
+function wp_add_object_terms(int $object_id, array $terms, string $taxonomy) {
+	return wp_set_object_terms($object_id, $terms, $taxonomy, true);
+}
+
+/**
+ * Remove term(s) associated with a given object.
+ *
+ * @since 3.6.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @param int              $object_id The ID of the object from which the terms will be removed.
+ * @param string|int|array $terms     The slug(s) or ID(s) of the term(s) to remove.
+ * @param string           $taxonomy  Taxonomy name.
+ * @return bool|WP_Error True on success, false or WP_Error on failure.
+ */
+function wp_remove_object_terms(int $object_id, array $terms, string $taxonomy) {
+	try {
+		$handler = new Model\Term_Relationships_Handler;
+		return $handler->remove_object_terms($object_id, $terms, $taxonomy);
+	} catch (Exception $e) {
+		return new WP_Error(__FUNCTION__, $e->getMessage());
+	}
+}
+
+/**
+ * Determine if the given object is associated with any of the given terms.
+ *
+ * The given terms are checked against the object's terms' term_ids, names and slugs.
+ * Terms given as integers will only be checked against the object's terms' term_ids.
+ * If no terms are given, determines if object is associated with any terms in the given taxonomy.
+ *
+ * @since 2.7.0
+ *
+ * @param int                       $object_id ID of the object (post ID, link ID, ...).
+ * @param string                    $taxonomy  Single taxonomy name.
+ * @param int|string|int[]|string[] $terms     Optional. Term ID, name, slug, or array of such
+ *                                             to check against. Default null.
+ * @return bool|WP_Error WP_Error on input error.
+ */
+function is_object_in_term(int $object_id, string $taxonomy, $terms = null) {
+	try {
+		$handler = new Model\Term_Relationships_Handler;
+		return $handler->is_object_in_term($object_id, $taxonomy, $terms);
+	} catch (Exception $e) {
+		return new WP_Error(__FUNCTION__, $e->getMessage());
+	}
 }

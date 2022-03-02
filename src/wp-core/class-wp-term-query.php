@@ -392,12 +392,37 @@ class WP_Term_Query {
 		global $wpdb;
 		$fields                    = $wpdb->terms . '.*';
 		$this->sql_clauses['from'] = "$wpdb->terms";
+
+		// Get Cache
+		$cache = $this->get_query_cache();
+		if (false !== $cache) {
+			if ('all' === $fields || 'all_with_object_id' === $fields) {
+				$cache = $this->populate_terms($cache);
+			}
+
+			$this->terms = $cache;
+			return $this->terms;
+		}
+
 		extract($this->sql_clauses);
 		$this->request = "SELECT {$distinct} {$fields} FROM {$from} {$join} {$where} {$orderby} {$limits}";
 
 		$this->terms = null;
 
 		$terms = $wpdb->get_results($this->request);
+
+		// Set Cache
+		$this->set_query_cache($terms);
+
+		// Filter Fields
+		if ('t_ids' === $this->query_vars['fields']) {
+			foreach ($terms as $term) {
+				$_terms[] = (int) $term->term_id;
+			}
+		}
+		if (!empty($_terms)) {
+			$terms = $_terms;
+		}
 
 		/**
 		 * Filters the terms array before the query takes place.
@@ -412,11 +437,6 @@ class WP_Term_Query {
 		 */
 		$this->terms = apply_filters_ref_array('terms_pre_query', [$this->terms, &$this]);
 
-		if (null !== $this->terms) {
-			return $this->terms;
-		}
-
-		$this->terms = $terms;
 		return $this->terms;
 	}
 
@@ -676,5 +696,25 @@ class WP_Term_Query {
 		}
 
 		return $terms;
+	}
+
+	protected function set_query_cache($terms) {
+		$cache_key = $this->build_cache_key();
+		wp_cache_set($cache_key, $terms, 'terms', DAY_IN_SECONDS);
+	}
+
+	protected function get_query_cache() {
+		$cache_key = $this->build_cache_key();
+		return wp_cache_get($cache_key, 'terms');
+	}
+
+	protected function build_cache_key(): string{
+		// $args can be anything. Only use the args defined in defaults to compute the key.
+		// $key = md5(serialize(wp_array_slice_assoc($args, array_keys($this->query_var_defaults))) . serialize($taxonomies) . $this->request);
+
+		ksort($this->sql_clauses);
+		$key          = md5(serialize($this->sql_clauses));
+		$last_changed = wp_cache_get_last_changed('terms');
+		return "get_terms:$key:$last_changed";
 	}
 }

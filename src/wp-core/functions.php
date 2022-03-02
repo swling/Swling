@@ -161,3 +161,33 @@ function _deprecated_function($function, $version, $replacement = '') {
 		}
 	}
 }
+
+/**
+ * Gets last changed date for the specified cache group.
+ *
+ * @since 4.7.0
+ *
+ * @param string $group Where the cache contents are grouped.
+ * @return string UNIX timestamp with microseconds representing when the group was last changed.
+ */
+function wp_cache_get_last_changed(string $group): string{
+	$last_changed = wp_cache_get('last_changed', $group);
+
+	if (!$last_changed) {
+		$last_changed = microtime();
+		wp_cache_set('last_changed', $last_changed, $group);
+	}
+
+	return $last_changed;
+}
+
+/**
+ * Delete last changed date for the specified cache group.
+ *
+ *
+ * @param string $group Where the cache contents are grouped.
+ * @return bool True on successful removal, false on failure.
+ */
+function wp_cache_delete_last_changed(string $group): bool {
+	return wp_cache_delete('last_changed', $group);
+}
