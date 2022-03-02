@@ -1,4 +1,8 @@
 <?php
+/**
+ * Query API: WP_Query class
+ *
+ */
 class WP_Query {
 
 	/**

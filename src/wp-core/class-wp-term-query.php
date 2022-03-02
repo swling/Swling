@@ -406,10 +406,7 @@ class WP_Term_Query {
 
 		extract($this->sql_clauses);
 		$this->request = "SELECT {$distinct} {$fields} FROM {$from} {$join} {$where} {$orderby} {$limits}";
-
-		$this->terms = null;
-
-		$terms = $wpdb->get_results($this->request);
+		$terms         = $wpdb->get_results($this->request);
 
 		// Set Cache
 		$this->set_query_cache($terms);
@@ -435,7 +432,7 @@ class WP_Term_Query {
 		 *                             or null to allow WP queries to run normally.
 		 * @param WP_Term_Query $query The WP_Term_Query instance, passed by reference.
 		 */
-		$this->terms = apply_filters_ref_array('terms_pre_query', [$this->terms, &$this]);
+		$this->terms = apply_filters_ref_array('terms_pre_query', [$terms, &$this]);
 
 		return $this->terms;
 	}

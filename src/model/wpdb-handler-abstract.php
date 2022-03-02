@@ -17,8 +17,6 @@ abstract class WPDB_Handler_Abstract {
 	protected $required_columns    = [];
 	protected $object_cache_fields = [];
 
-	private static $last_changed_key = 'last_changed';
-
 	/**
 	 * Constructer
 	 *
@@ -233,8 +231,8 @@ abstract class WPDB_Handler_Abstract {
 	/**
 	 * Refresh last changed date for DB Table
 	 */
-	private function refresh_db_table_last_changed() {
-		wp_cache_set(static::$last_changed_key, microtime(), $this->table_name);
+	private function refresh_db_table_last_changed(): bool {
+		return wp_cache_delete_last_changed($this->table_name);
 	}
 
 	/**
@@ -244,23 +242,6 @@ abstract class WPDB_Handler_Abstract {
 	 * @return string UNIX timestamp with microseconds representing when the group was last changed.
 	 */
 	public function get_current_db_table_last_changed(): string {
-		return static::get_db_table_last_changed($this->table_name);
-	}
-
-	/**
-	 * Gets last changed date for the specified DB table.
-	 *
-	 * @param string $group Where the cache contents are grouped.
-	 * @return string UNIX timestamp with microseconds representing when the group was last changed.
-	 */
-	public static function get_db_table_last_changed(string $table_name): string{
-		$last_changed = wp_cache_get(static::$last_changed_key, $table_name);
-
-		if (!$last_changed) {
-			$last_changed = microtime();
-			wp_cache_set(static::$last_changed_key, $last_changed, $table_name);
-		}
-
-		return $last_changed;
+		return wp_cache_get_last_changed($this->table_name);
 	}
 }
