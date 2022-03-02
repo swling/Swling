@@ -413,3 +413,27 @@ function is_object_in_term(int $object_id, string $taxonomy, $terms = null) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
 	}
 }
+
+/**
+ * Will unlink the object from the taxonomy or taxonomies.
+ *
+ * Will remove all relationships between the object and any terms in
+ * a particular taxonomy or taxonomies. Does not remove the term or
+ * taxonomy itself.
+ *
+ * @param int          $object_id  The term object ID that refers to the term.
+ * @param string|array $taxonomies List of taxonomy names or single taxonomy name.
+ */
+function wp_delete_object_term_relationships(int $object_id, $taxonomies) {
+	$object_id = (int) $object_id;
+
+	if (!is_array($taxonomies)) {
+		$taxonomies = [$taxonomies];
+	}
+
+	foreach ((array) $taxonomies as $taxonomy) {
+		$term_ids = wp_get_object_terms($object_id, $taxonomy, ['fields' => 'ids']);
+		$term_ids = array_map('intval', $term_ids);
+		wp_remove_object_terms($object_id, $term_ids, $taxonomy);
+	}
+}

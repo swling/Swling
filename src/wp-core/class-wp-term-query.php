@@ -412,7 +412,7 @@ class WP_Term_Query {
 		$this->set_query_cache($terms);
 
 		// Filter Fields
-		if ('t_ids' === $this->query_vars['fields']) {
+		if ('ids' === $this->query_vars['fields']) {
 			foreach ($terms as $term) {
 				$_terms[] = (int) $term->term_id;
 			}

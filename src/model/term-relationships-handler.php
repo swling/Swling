@@ -56,7 +56,7 @@ class Term_Relationships_Handler {
 		}
 
 		if (!$append) {
-			$old_t_ids = $this->get_object_terms($object_id, $taxonomy, ['fields' => 't_ids']);
+			$old_t_ids = $this->get_object_terms($object_id, $taxonomy, ['fields' => 'ids']);
 		} else {
 			$old_t_ids = [];
 		}
