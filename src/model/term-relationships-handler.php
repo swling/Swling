@@ -2,9 +2,10 @@
 namespace Model;
 
 use Exception;
+use Model\WPDB_Handler_Term;
 
 /**
- * @see Wwpdb->term_relationships
+ * @see wpdb->term_relationships
  *
  */
 class Term_Relationships_Handler {
@@ -36,10 +37,6 @@ class Term_Relationships_Handler {
 	 * A relationship means that the term is grouped in or belongs to the taxonomy.
 	 * A term has no meaning until it is given context by defining which taxonomy it
 	 * exists under.
-	 *
-	 * @since 2.3.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
 	 * @param int              $object_id The object to relate to.
 	 * @param array $terms     array of either term slugs or IDs.
@@ -121,8 +118,6 @@ class Term_Relationships_Handler {
 		/**
 		 * Fires after an object's terms have been set.
 		 *
-		 * @since 2.8.0
-		 *
 		 * @param int    $object_id  Object ID.
 		 * @param array  $terms      An array of object term IDs or slugs.
 		 * @param array  $tt_ids     An array of term taxonomy IDs.
@@ -158,10 +153,6 @@ class Term_Relationships_Handler {
 
 	/**
 	 * Remove term(s) associated with a given object.
-	 *
-	 * @since 3.6.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
 	 * @param int              $object_id The ID of the object from which the terms will be removed.
 	 * @param string|int|array $terms     The slug(s) or ID(s) of the term(s) to remove.
@@ -200,9 +191,6 @@ class Term_Relationships_Handler {
 		/**
 		 * Fires immediately before an object-term relationship is deleted.
 		 *
-		 * @since 2.9.0
-		 * @since 4.7.0 Added the `$taxonomy` parameter.
-		 *
 		 * @param int   $object_id Object ID.
 		 * @param array $tt_ids    An array of term taxonomy IDs.
 		 * @param string $taxonomy  Taxonomy slug.
@@ -220,9 +208,6 @@ class Term_Relationships_Handler {
 		/**
 		 * Fires immediately after an object-term relationship is deleted.
 		 *
-		 * @since 2.9.0
-		 * @since 4.7.0 Added the `$taxonomy` parameter.
-		 *
 		 * @param int    $object_id Object ID.
 		 * @param array  $tt_ids    An array of term taxonomy IDs.
 		 * @param string $taxonomy  Taxonomy slug.
@@ -235,13 +220,29 @@ class Term_Relationships_Handler {
 	}
 
 	/**
+	 * Removes a term object relationships from the database.
+	 *
+	 * @param int          $term     Term ID.
+	 *
+	 * @return bool True on success
+	 */
+	public function delete_term_object_relationships(object $term) {
+		$term_id    = (int) $term->term_id;
+		$taxonomy   = $term->taxonomy;
+		$object_ids = (array) $this->wpdb->get_col($this->wpdb->prepare("SELECT object_id FROM $this->table WHERE term_taxonomy_id = %d", $term_id));
+		foreach ($object_ids as $object_id) {
+			$this->remove_object_terms($object_id, [$term_id], $taxonomy);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Determine if the given object is associated with any of the given terms.
 	 *
 	 * The given terms are checked against the object's terms' term_ids, names and slugs.
 	 * Terms given as integers will only be checked against the object's terms' term_ids.
 	 * If no terms are given, determines if object is associated with any terms in the given taxonomy.
-	 *
-	 * @since 2.7.0
 	 *
 	 * @param int                       $object_id ID of the object (post ID, link ID, ...).
 	 * @param string                    $taxonomy  Single taxonomy name.
@@ -324,8 +325,6 @@ class Term_Relationships_Handler {
 		/**
 		 * Filters the post statuses for updating the term count.
 		 *
-		 * @since 5.7.0
-		 *
 		 * @param string[]    $post_statuses List of post statuses to include in the count. Default is 'publish'.
 		 * @param WP_Taxonomy $taxonomy      Current taxonomy object.
 		 */
@@ -338,15 +337,8 @@ class Term_Relationships_Handler {
 				$count += (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $this->table, $wpdb->posts WHERE $wpdb->posts.ID = $this->table.object_id AND post_status IN ('" . implode("', '", $post_statuses) . "') AND post_type IN ('" . implode("', '", $object_types) . "') AND term_taxonomy_id = %d", $term));
 			}
 
-			/** This action is documented in wp-includes/taxonomy.php */
-			do_action('edit_term_taxonomy', $term, $taxonomy->name);
-			// $wpdb->update($wpdb->terms, compact('count'), ['term_id' => $term]);
-
 			$handler = new WPDB_Handler_Term;
 			$handler->update(['term_id' => $term, 'count' => $count]);
-
-			/** This action is documented in wp-includes/taxonomy.php */
-			do_action('edited_term_taxonomy', $term, $taxonomy->name);
 		}
 	}
 
@@ -383,10 +375,6 @@ class Term_Relationships_Handler {
 	 * Upstream functions (like get_the_terms() and is_object_in_term()) are
 	 * responsible for populating the object-term relationship cache. The current
 	 * function only fetches relationship data that is already in the cache.
-	 *
-	 * @since 2.3.0
-	 * @since 4.7.0 Returns a `WP_Error` object if there's an error with
-	 *              any of the matched terms.
 	 *
 	 * @param int    $id       Term object ID, for example a post, comment, or user ID.
 	 * @param string $taxonomy Taxonomy name.

@@ -437,3 +437,22 @@ function wp_delete_object_term_relationships(int $object_id, $taxonomies) {
 		wp_remove_object_terms($object_id, $term_ids, $taxonomy);
 	}
 }
+
+function wp_delete_term_object_relationships(object $term) {
+	try {
+		$handler = new Model\Term_Relationships_Handler;
+		return $handler->delete_term_object_relationships($term);
+	} catch (Exception $e) {
+		return new WP_Error(__FUNCTION__, $e->getMessage());
+	}
+}
+
+// Update children to point to new parent.
+function wp_modify_deleted_term_children(object $deleted_term) {
+	try {
+		$handler = new Model\WPDB_Handler_Term;
+		return $handler->modify_deleted_term_children($deleted_term);
+	} catch (Exception $e) {
+		return new WP_Error(__FUNCTION__, $e->getMessage());
+	}
+}

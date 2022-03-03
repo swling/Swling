@@ -102,4 +102,39 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 			throw new Exception(__('Parent term does not exist.'));
 		}
 	}
+
+	// Update children to point to new parent.
+	public function modify_deleted_term_children(object $deleted_term) {
+		$wpdb     = &$this->wpdb;
+		$term_id  = (int) $deleted_term->term_id;
+		$taxonomy = $deleted_term->taxonomy;
+		$parent   = $deleted_term->parent;
+
+		// Update children to point to new parent.
+		if (!is_taxonomy_hierarchical($taxonomy)) {
+			return false;
+		}
+
+		$edit_terms = $wpdb->get_results("SELECT * FROM $this->table WHERE `parent` = " . (int) $term_id);
+		$wpdb->update($wpdb->terms, compact('parent'), ['parent' => $term_id] + compact('taxonomy'));
+
+		// Delete Cache
+		$this->clean_terms_cache($edit_terms);
+	}
+
+	/**
+	 * Will remove all of the term IDs from the cache.
+	 *
+	 * @param int|int[] $ids  Single or array of term IDs.
+	 */
+	private function clean_terms_cache(array $terms) {
+		foreach ($terms as $term) {
+
+			if (!is_object($term)) {
+				$term = $this->get($term);
+			}
+
+			$this->clean_table_cache($term);
+		}
+	}
 }

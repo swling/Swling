@@ -133,9 +133,11 @@ abstract class WPDB_Handler_Abstract {
 	 * @return int The primary id on success. The value 0 on failure.
 	 */
 	public function delete(int $ID): int{
-		do_action("before_delete_{$this->object_name}", $ID);
-
 		$data = $this->get($ID);
+		if (!$data) {
+			return 0;
+		}
+		do_action("before_delete_{$this->object_name}", $data, $ID);
 
 		$where  = [$this->primary_id_column => $ID];
 		$delete = $this->wpdb->delete($this->table, $where);
@@ -218,7 +220,7 @@ abstract class WPDB_Handler_Abstract {
 	/**
 	 * clean table cache When a row is deleted or updated
 	 */
-	private function clean_table_cache(object $old_data) {
+	protected function clean_table_cache(object $old_data) {
 		foreach ($old_data as $field => $value) {
 			if (in_array($field, $this->object_cache_fields)) {
 				wp_cache_delete($value, $this->table_name . ':' . $field);
