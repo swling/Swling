@@ -121,7 +121,7 @@ abstract class WPDB_Handler_Abstract {
 			$this->clean_table_cache($object_before);
 
 			$object_after = $this->get($ID);
-			do_action("after_{$this->object_name}_updated", $ID, $object_after, $object_before, $where);
+			do_action("after_{$this->object_name}_updated", $ID, $object_after, $object_before);
 		}
 
 		return $update ? $ID : 0;
@@ -144,7 +144,7 @@ abstract class WPDB_Handler_Abstract {
 		if ($delete) {
 			$this->clean_table_cache($data);
 
-			do_action("after_{$this->object_name}_deleted", $data);
+			do_action("after_{$this->object_name}_deleted", $data, $ID);
 		}
 
 		return $delete ? $ID : 0;
