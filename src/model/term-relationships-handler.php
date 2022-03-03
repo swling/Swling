@@ -72,14 +72,14 @@ class Term_Relationships_Handler {
 					continue;
 				}
 
-				$new_term_id = wp_insert_term($term, $taxonomy);
+				$term_id = wp_insert_term($term, $taxonomy);
+				if (is_wp_error($term_id)) {
+					return $term_id;
+				}
+			} else {
+				$term_id = $term_info->term_id;
 			}
 
-			if (is_wp_error($term_info)) {
-				return $term_info;
-			}
-
-			$term_id        = $new_term_id ?? $term_info->term_id;
 			$t_ids[]        = $term_id;
 			$object_in_term = $wpdb->get_var($wpdb->prepare("SELECT term_taxonomy_id FROM $this->table WHERE object_id = %d AND term_taxonomy_id = %d", $object_id, $term_id));
 			if ($object_in_term) {
@@ -113,7 +113,7 @@ class Term_Relationships_Handler {
 		}
 
 		// cache
-		$this->clean_object_term_cache($object_id, $taxonomy);
+		$this->clean_object_terms_cache($object_id, $taxonomy);
 
 		/**
 		 * Fires after an object's terms have been set.
@@ -134,7 +134,7 @@ class Term_Relationships_Handler {
 		$single_cache = empty($args);
 
 		if ($single_cache) {
-			$terms = $this->get_object_term_cache($object_id, $taxonomy);
+			$terms = $this->get_object_terms_cache($object_id, $taxonomy);
 			if (false !== $terms) {
 				return $terms;
 			}
@@ -145,7 +145,7 @@ class Term_Relationships_Handler {
 		$terms              = get_terms($args);
 
 		if ($single_cache and !is_wp_error($terms)) {
-			$this->set_object_term_cache($object_id, $taxonomy, $terms);
+			$this->set_object_terms_cache($object_id, $taxonomy, $terms);
 		}
 
 		return apply_filters('get_object_terms', $terms, $object_id, $taxonomy);
@@ -203,7 +203,7 @@ class Term_Relationships_Handler {
 		}
 
 		// Cache
-		$this->clean_object_term_cache($object_id, $taxonomy);
+		$this->clean_object_terms_cache($object_id, $taxonomy);
 
 		/**
 		 * Fires immediately after an object-term relationship is deleted.
@@ -359,11 +359,11 @@ class Term_Relationships_Handler {
 		return $term_info;
 	}
 
-	private function set_object_term_cache(int $object_id, string $taxonomy, array $terms) {
+	private function set_object_terms_cache(int $object_id, string $taxonomy, array $terms) {
 		wp_cache_set($object_id, $terms, "{$taxonomy}_relationships");
 	}
 
-	private function clean_object_term_cache(int $object_id, string $taxonomy) {
+	private function clean_object_terms_cache(int $object_id, string $taxonomy) {
 		wp_cache_delete($object_id, "{$taxonomy}_relationships");
 		wp_cache_delete_last_changed('terms');
 		wp_cache_delete_last_changed('term_relationships');
@@ -382,7 +382,7 @@ class Term_Relationships_Handler {
 	 *                                 False if cache is empty for `$taxonomy` and `$id`.
 	 *                                 WP_Error if get_term() returns an error object for any term.
 	 */
-	private function get_object_term_cache(int $object_id, string $taxonomy) {
+	private function get_object_terms_cache(int $object_id, string $taxonomy) {
 		$_term_ids = wp_cache_get($object_id, "{$taxonomy}_relationships");
 
 		// We leave the priming of relationship caches to upstream functions.
