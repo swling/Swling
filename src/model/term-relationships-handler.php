@@ -86,13 +86,7 @@ class Term_Relationships_Handler {
 				continue;
 			}
 
-			$wpdb->insert(
-				$this->table,
-				[
-					'object_id'        => $object_id,
-					'term_taxonomy_id' => $term_id,
-				]
-			);
+			$wpdb->insert($this->table, ['object_id' => $object_id, 'term_taxonomy_id' => $term_id]);
 
 			$new_tt_ids[] = $term_id;
 		}
@@ -120,10 +114,10 @@ class Term_Relationships_Handler {
 		 *
 		 * @param int    $object_id  Object ID.
 		 * @param array  $terms      An array of object term IDs or slugs.
-		 * @param array  $tt_ids     An array of term taxonomy IDs.
+		 * @param array  $t_ids      An array of term taxonomy IDs.
 		 * @param string $taxonomy   Taxonomy slug.
 		 * @param bool   $append     Whether to append new terms to the old terms.
-		 * @param array  $old_t_ids Old array of term taxonomy IDs.
+		 * @param array  $old_t_ids  Old array of term taxonomy IDs.
 		 */
 		do_action('set_object_terms', $object_id, $terms, $t_ids, $taxonomy, $append, $old_t_ids);
 

@@ -34,7 +34,7 @@ class Route {
 	 * - 常规请求：将路径切割为：控制类/请求参数
 	 */
 	public function __construct() {
-		$request              = str_replace('/' . DIR_NAME . '/', '', $_SERVER['REQUEST_URI']);
+		$request              = str_ireplace('/' . DIR_NAME . '/', '', $_SERVER['REQUEST_URI']);
 		$request_arr          = parse_url($request);
 		$path                 = $request_arr['path'] ?? '';
 		$this->query          = $request_arr['query'] ?? '';
