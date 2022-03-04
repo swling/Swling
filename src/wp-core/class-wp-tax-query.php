@@ -391,7 +391,7 @@ class WP_Tax_Query {
 		$join  = '';
 		$where = '';
 
-		// $this->clean_query( $clause );
+		$this->clean_query( $clause );
 
 		if ( is_wp_error( $clause ) ) {
 			return self::$no_results;
@@ -543,15 +543,7 @@ class WP_Tax_Query {
 	 * @param array $query The single query. Passed by reference.
 	 */
 	private function clean_query( &$query ) {
-		if ( empty( $query['taxonomy'] ) ) {
-			if ( 'term_taxonomy_id' !== $query['field'] ) {
-				$query = new WP_Error( 'invalid_taxonomy', __( 'Invalid taxonomy.' ) );
-				return;
-			}
-
-			// So long as there are shared terms, 'include_children' requires that a taxonomy is set.
-			$query['include_children'] = false;
-		} elseif ( ! taxonomy_exists( $query['taxonomy'] ) ) {
+		if ( ! taxonomy_exists( $query['taxonomy'] ) ) {
 			$query = new WP_Error( 'invalid_taxonomy', __( 'Invalid taxonomy.' ) );
 			return;
 		}
@@ -577,7 +569,7 @@ class WP_Tax_Query {
 			$query['terms'] = $children;
 		}
 
-		$this->transform_query( $query, 'term_taxonomy_id' );
+		$this->transform_query( $query, 'term_id' );
 	}
 
 	/**
