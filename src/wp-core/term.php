@@ -56,7 +56,7 @@ function wp_insert_term(string $term, string $taxonomy, array $args = []) {
 	unset($args['count']);
 
 	try {
-		$handler = new Model\WPDB_Handler_Term;
+		$handler = Model\WPDB_Handler_Term::get_instance();
 		return $handler->insert($args);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -106,7 +106,7 @@ function wp_update_term(int $term_id, string $taxonomy, array $args = []) {
 	unset($args['count'], $args['filter']);
 
 	try {
-		$handler = new Model\WPDB_Handler_Term;
+		$handler = Model\WPDB_Handler_Term::get_instance();
 		return $handler->update($args);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -126,7 +126,7 @@ function wp_update_term(int $term_id, string $taxonomy, array $args = []) {
  *                           deletion of default Category. WP_Error if the taxonomy does not exist.
  */
 function wp_delete_term(int $term_id) {
-	$handler = new Model\WPDB_Handler_Term;
+	$handler = Model\WPDB_Handler_Term::get_instance();
 	return $handler->delete($term_id);
 }
 
@@ -330,7 +330,7 @@ function get_terms(array $args = []) {
  */
 function wp_set_object_terms(int $object_id, array $terms, string $taxonomy, bool $append = false) {
 	try {
-		$handler = new Model\Term_Relationships_Handler;
+		$handler = Model\Term_Relationships_Handler::get_instance();
 		return $handler->set_object_terms($object_id, $terms, $taxonomy, $append);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -348,7 +348,7 @@ function wp_set_object_terms(int $object_id, array $terms, string $taxonomy, boo
  */
 function wp_get_object_terms(int $object_id, string $taxonomy, array $args = []) {
 	try {
-		$handler = new Model\Term_Relationships_Handler;
+		$handler = Model\Term_Relationships_Handler::get_instance();
 		return $handler->get_object_terms($object_id, $taxonomy, $args);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -383,7 +383,7 @@ function wp_add_object_terms(int $object_id, array $terms, string $taxonomy) {
  */
 function wp_remove_object_terms(int $object_id, array $terms, string $taxonomy) {
 	try {
-		$handler = new Model\Term_Relationships_Handler;
+		$handler = Model\Term_Relationships_Handler::get_instance();
 		return $handler->remove_object_terms($object_id, $terms, $taxonomy);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -407,7 +407,7 @@ function wp_remove_object_terms(int $object_id, array $terms, string $taxonomy) 
  */
 function is_object_in_term(int $object_id, string $taxonomy, $terms = null) {
 	try {
-		$handler = new Model\Term_Relationships_Handler;
+		$handler = Model\Term_Relationships_Handler::get_instance();
 		return $handler->is_object_in_term($object_id, $taxonomy, $terms);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -437,7 +437,7 @@ function wp_delete_object_term_relationships(object $object, array $taxonomies =
 
 function wp_delete_term_object_relationships(object $term) {
 	try {
-		$handler = new Model\Term_Relationships_Handler;
+		$handler = Model\Term_Relationships_Handler::get_instance();
 		return $handler->delete_term_object_relationships($term);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
@@ -447,7 +447,7 @@ function wp_delete_term_object_relationships(object $term) {
 // Update children to point to new parent.
 function wp_modify_deleted_term_children(object $deleted_term) {
 	try {
-		$handler = new Model\WPDB_Handler_Term;
+		$handler = Model\WPDB_Handler_Term::get_instance();
 		return $handler->modify_deleted_term_children($deleted_term);
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());

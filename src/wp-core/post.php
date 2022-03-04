@@ -636,7 +636,7 @@ function get_post_stati($args = [], $output = 'names', $operator = 'and') {
  * @return int The post ID on success. The value 0 on failure.
  */
 function wp_insert_post(array $postarr): int{
-	$handler = new Model\WPDB_Handler_Post;
+	$handler = Model\WPDB_Handler_Post::get_instance();
 	return $handler->insert($postarr);
 }
 
@@ -671,7 +671,7 @@ function get_post(int $post_id = 0) {
  * @return int The post ID on success. The value 0 on failure.
  */
 function wp_update_post(array $postarr): int{
-	$handler = new Model\WPDB_Handler_Post;
+	$handler = Model\WPDB_Handler_Post::get_instance();
 	return $handler->update($postarr);
 }
 
@@ -688,6 +688,6 @@ function wp_delete_post(int $post_id, bool $force_delete = false): int{
 		return 0;
 	}
 
-	$handler = new Model\WPDB_Handler_Post;
+	$handler = Model\WPDB_Handler_Post::get_instance();
 	return $handler->delete($post->ID);
 }

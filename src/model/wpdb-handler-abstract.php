@@ -2,6 +2,7 @@
 namespace Model;
 
 use Exception;
+use Utility\Singleton_Trait;
 
 /**
  * 单行数据表操作抽象基类
@@ -17,12 +18,14 @@ abstract class WPDB_Handler_Abstract {
 	protected $required_columns    = [];
 	protected $object_cache_fields = [];
 
+	use Singleton_Trait;
+
 	/**
 	 * Constructer
 	 *
 	 * Init
 	 */
-	public function __construct() {
+	private function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
 

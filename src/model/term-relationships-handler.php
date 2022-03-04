@@ -3,6 +3,7 @@ namespace Model;
 
 use Exception;
 use Model\WPDB_Handler_Term;
+use Utility\Singleton_Trait;
 
 /**
  * @see wpdb->term_relationships
@@ -14,12 +15,14 @@ class Term_Relationships_Handler {
 	protected $table_name = 'term_relationships';
 	protected $table;
 
+	use Singleton_Trait;
+
 	/**
 	 * Constructer
 	 *
 	 * Init
 	 */
-	public function __construct() {
+	private function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
 
@@ -216,7 +219,7 @@ class Term_Relationships_Handler {
 	/**
 	 * Removes a term object relationships from the database.
 	 *
-	 * @param int          $term     Term ID.
+	 * @param object $term Term Object.
 	 *
 	 * @return bool True on success
 	 */
@@ -331,7 +334,7 @@ class Term_Relationships_Handler {
 				$count += (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $this->table, $wpdb->posts WHERE $wpdb->posts.ID = $this->table.object_id AND post_status IN ('" . implode("', '", $post_statuses) . "') AND post_type IN ('" . implode("', '", $object_types) . "') AND term_taxonomy_id = %d", $term));
 			}
 
-			$handler = new WPDB_Handler_Term;
+			$handler = WPDB_Handler_Term::get_instance();
 			$handler->update(['term_id' => $term, 'count' => $count]);
 		}
 	}

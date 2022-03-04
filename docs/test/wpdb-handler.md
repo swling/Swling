@@ -9,7 +9,7 @@ add_action('before_delete_post', function ($where) {
 	exit;
 });
 
-$wpdb_handler = new Model\WPDB_Handler_Post;
+$wpdb_handler = Model\WPDB_Handler_Post::get_instance();
 echo $wpdb_handler->insert(['post_title' => time()]);
 echo $wpdb_handler->update(['post_title' => '修改0'], ['ID' => '1']);
 print_r($wpdb_handler->get(['ID' => '1']));
@@ -25,7 +25,7 @@ add_action('before_delete_user', function ($where) {
 	exit;
 });
 
-$wpdb_handler = new Model\WPDB_Handler_User;
+$wpdb_handler = Model\WPDB_Handler_User::get_instance();
 echo $wpdb_handler->insert(['user_login' => 'admin', 'display_name' => time()]);
 echo $wpdb_handler->update(['display_name' => '修改'], ['ID' => '1']);
 print_r($wpdb_handler->get(['ID' => 1]));

@@ -219,7 +219,7 @@ final class WP_Post {
 	 * @return WP_Post|false Post object, false otherwise.
 	 */
 	public static function get_instance(int $post_id) {
-		$handler = new Model\WPDB_Handler_Post;
+		$handler = Model\WPDB_Handler_Post::get_instance();
 		$post    = $handler->get($post_id);
 
 		if (!$post) {
