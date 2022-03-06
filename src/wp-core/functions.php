@@ -215,3 +215,17 @@ function wp_cache_get_last_changed(string $group): string{
 function wp_cache_delete_last_changed(string $group): bool {
 	return wp_cache_delete('last_changed', $group);
 }
+
+/**
+ * Retrieve the number of database queries during the WordPress execution.
+ *
+ * @since 2.0.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @return int Number of database queries.
+ */
+function get_num_queries() {
+	global $wpdb;
+	return $wpdb->num_queries;
+}

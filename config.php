@@ -11,6 +11,9 @@ define('DIR_NAME', basename(__DIR__));
 define('WPINC', 'src/wp-core');
 define('WP_CONTENT_DIR', 'content');
 
+// Template
+define('TEMPLATEPATH', ABSPATH . 'content/themes/default');
+
 // 自动加载器
 require ABSPATH . 'autoloader.php';
 
@@ -26,6 +29,8 @@ require ABSPATH . WPINC . '/default-hook.php';
 require ABSPATH . WPINC . '/taxonomy.php';
 require ABSPATH . WPINC . '/post.php';
 require ABSPATH . WPINC . '/term.php';
+
+require ABSPATH . WPINC . '/template.php';
 
 // 计时
 timer_start();

@@ -24,7 +24,8 @@ namespace Controller;
  */
 class Route {
 
-	private $controller     = '';
+	private $handler        = '';
+	private $param          = '';
 	private $query          = '';
 	private $is_api_request = false;
 
@@ -43,23 +44,32 @@ class Route {
 
 		if (str_starts_with($path, $this->api_prefix)) {
 			$this->is_api_request = true;
-			$controller           = str_replace($this->api_prefix . '/', '', $path);
+			$handler              = str_replace($this->api_prefix . '/', '', $path);
 		} else {
-			$url_info   = explode('/', $path, 2);
-			$controller = $url_info[0];
+			$url_info    = explode('/', $path, 2);
+			$handler     = $url_info[0];
+			$this->param = $url_info[1] ?? '';
 		}
 
 		// 将 URI 路径转为命名空间
-		$this->controller = str_replace('/', '\\', $controller);
+		$this->handler = $handler ? str_replace('/', '\\', $handler) : 'index';
 	}
 
 	public function render() {
-		if (!$this->controller) {
-			return;
+		if (!$this->is_api_request) {
+			$this->template_render();
+		} else {
+			$this->api_render();
 		}
+	}
 
-		if (class_exists($this->controller)) {
-			new $this->controller($this->query);
+	private function template_render() {
+		new Template_Dispatcher($this->handler, $this->param);
+	}
+
+	private function api_render() {
+		if (class_exists($this->handler)) {
+			new $this->handler($this->query);
 		} else {
 			http_response_code(404);
 		}

@@ -127,13 +127,13 @@ class WP_Query {
 		$this->query_vars = array_merge(static::$default_query, $query);
 		$qv               = $this->query_vars;
 
-		if (isset($qv['cat'])) {
-			$this->is_archive = true;
-		}
-
 		if ($qv['tax_query']) {
 			$this->is_archive = true;
 			$this->is_tax     = true;
+		}
+
+		if (!$this->is_singular and !$this->is_archive and !$this->is_search and !$this->is_404) {
+			$this->is_home = true;
 		}
 	}
 
