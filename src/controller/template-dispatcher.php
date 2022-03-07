@@ -6,7 +6,7 @@ use WP_Query;
 /**
  * 根据 uri：
  * - 指派模板文件
- * - 定义主查询：global $wp_query
+ * - 定义主查询：global $wp_query、global $wp_the_query;
  * - 解析 WP_Query 参数
  */
 class Template_Dispatcher {
@@ -25,6 +25,10 @@ class Template_Dispatcher {
 		if ($this->wp_query_args) {
 			$wp_query = new WP_Query($this->wp_query_args);
 		}
+
+		// 复制备份（在修改主查询后，可通过此备份必要时还原）
+		global $wp_the_query;
+		$wp_the_query = $wp_query;
 
 		include TEMPLATEPATH . '/' . $this->template_file;
 	}
