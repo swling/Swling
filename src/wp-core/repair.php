@@ -406,6 +406,10 @@ function get_current_blog_id() {
 	return absint($blog_id);
 }
 
+function get_term_children() {
+	return [];
+}
+
 /**
  * Constants for expressing human-readable data sizes in their respective number of bytes.
  *

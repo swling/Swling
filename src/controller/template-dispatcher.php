@@ -4,9 +4,10 @@ namespace Controller;
 use WP_Query;
 
 /**
- * 根据 uri： 
+ * 根据 uri：
  * - 指派模板文件
- * - WP_Query 参数
+ * - 定义主查询：global $wp_query
+ * - 解析 WP_Query 参数
  */
 class Template_Dispatcher {
 
@@ -21,7 +22,9 @@ class Template_Dispatcher {
 		$this->parse_query();
 
 		global $wp_query;
-		$wp_query = new WP_Query($this->wp_query_args);
+		if ($this->wp_query_args) {
+			$wp_query = new WP_Query($this->wp_query_args);
+		}
 
 		include TEMPLATEPATH . '/' . $this->template_file;
 	}

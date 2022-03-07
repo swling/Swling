@@ -53,6 +53,59 @@ class WP_Query {
 	 */
 	public $posts;
 
+	/**
+	 * The number of posts for the current query.
+	 *
+	 * @since 1.5.0
+	 * @var int
+	 */
+	public $post_count = 0;
+
+	/**
+	 * Index of the current item in the loop.
+	 *
+	 * @since 1.5.0
+	 * @var int
+	 */
+	public $current_post = -1;
+
+	/**
+	 * Whether the loop has started and the caller is in the loop.
+	 *
+	 * @since 2.0.0
+	 * @var bool
+	 */
+	public $in_the_loop = false;
+
+	/**
+	 * The current post.
+	 *
+	 * This property does not get populated when the `fields` argument is set to
+	 * `ids` or `id=>parent`.
+	 *
+	 * @since 1.5.0
+	 * @var WP_Post|null
+	 */
+	public $post;
+
+	/**
+	 * The number of found posts for the current query.
+	 *
+	 * If limit clause was not used, equals $post_count.
+	 *
+	 * @since 2.1.0
+	 * @var int
+	 */
+	public $found_posts = 0;
+
+	/**
+	 * The number of pages.
+	 *
+	 * @since 2.1.0
+	 * @var int
+	 */
+	public $max_num_pages = 0;
+
 	private static $default_query = [
 		'post_type'      => 'post',
 		'post_status'    => 'publish',
@@ -84,8 +137,38 @@ class WP_Query {
 		global $wpdb;
 		$this->wpdb = $wpdb;
 
+		$this->query($query);
+
+	}
+
+	/**
+	 * Sets up the WordPress query by parsing query string.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @see WP_Query::parse_query() for all available arguments.
+	 *
+	 * @param array $query array of query arguments.
+	 * @return WP_Post[]|int[] Array of post objects or post IDs.
+	 */
+	public function query(array $query) {
 		$this->init_query_flags();
 		$this->parse_query($query);
+		return $this->get_posts();
+	}
+
+	/**
+	 * Is the query the main query?
+	 *
+	 * @since 3.3.0
+	 *
+	 * @global WP_Query $wp_query WordPress Query object.
+	 *
+	 * @return bool Whether the query is the main query.
+	 */
+	public function is_main_query() {
+		global $wp_query;
+		return $wp_query === $this;
 	}
 
 	/**
@@ -135,6 +218,36 @@ class WP_Query {
 		if (!$this->is_singular and !$this->is_archive and !$this->is_search and !$this->is_404) {
 			$this->is_home = true;
 		}
+	}
+
+	/**
+	 * Retrieves the value of a query variable.
+	 *
+	 * @since 1.5.0
+	 * @since 3.9.0 The `$default` argument was introduced.
+	 *
+	 * @param string $query_var Query variable key.
+	 * @param mixed  $default   Optional. Value to return if the query variable is not set. Default empty string.
+	 * @return mixed Contents of the query variable.
+	 */
+	public function get($query_var, $default = '') {
+		if (isset($this->query_vars[$query_var])) {
+			return $this->query_vars[$query_var];
+		}
+
+		return $default;
+	}
+
+	/**
+	 * Sets the value of a query variable.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $query_var Query variable key.
+	 * @param mixed  $value     Query variable value.
+	 */
+	public function set($query_var, $value) {
+		$this->query_vars[$query_var] = $value;
 	}
 
 	public function get_posts() {
@@ -195,6 +308,10 @@ class WP_Query {
 
 		// excute sql query
 		$this->posts = $wpdb->get_results($this->request);
+
+		$this->post_count = count($this->posts);
+		$this->set_found_posts($q, $this->limits);
+
 		return $this->posts;
 	}
 
@@ -293,4 +410,302 @@ class WP_Query {
 		}
 	}
 
+	/**
+	 * Set up the next post and iterate current post index.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return WP_Post Next post.
+	 */
+	public function next_post(): object{
+		$this->current_post++;
+
+		/** @var WP_Post */
+		$this->post = $this->posts[$this->current_post];
+		return $this->post;
+	}
+
+	/**
+	 * Sets up the current post.
+	 *
+	 * Retrieves the next post, sets up the post, sets the 'in the loop'
+	 * property to true.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @global WP_Post $post Global post object.
+	 */
+	public function the_post() {
+		global $post;
+		$this->in_the_loop = true;
+
+		if (-1 == $this->current_post) {
+			// Loop has just started.
+			/**
+			 * Fires once the loop is started.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param WP_Query $query The WP_Query instance (passed by reference).
+			 */
+			do_action_ref_array('loop_start', [ & $this]);
+		}
+
+		$post = $this->next_post();
+		$this->setup_postdata($post);
+	}
+
+	/**
+	 * Determines whether there are more posts available in the loop.
+	 *
+	 * Calls the {@see 'loop_end'} action when the loop is complete.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return bool True if posts are available, false if end of the loop.
+	 */
+	public function have_posts() {
+		if ($this->current_post + 1 < $this->post_count) {
+			return true;
+		} elseif ($this->current_post + 1 == $this->post_count && $this->post_count > 0) {
+			/**
+			 * Fires once the loop has ended.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param WP_Query $query The WP_Query instance (passed by reference).
+			 */
+			do_action_ref_array('loop_end', [ & $this]);
+			// Do some cleaning up after the loop.
+			$this->rewind_posts();
+		} elseif (0 === $this->post_count) {
+			/**
+			 * Fires if no results are found in a post query.
+			 *
+			 * @since 4.9.0
+			 *
+			 * @param WP_Query $query The WP_Query instance.
+			 */
+			do_action('loop_no_results', $this);
+		}
+
+		$this->in_the_loop = false;
+		return false;
+	}
+
+	/**
+	 * Rewind the posts and reset post index.
+	 *
+	 * @since 1.5.0
+	 */
+	public function rewind_posts() {
+		$this->current_post = -1;
+		if ($this->post_count > 0) {
+			$this->post = $this->posts[0];
+		}
+	}
+
+	/**
+	 * Set up global post data.
+	 *
+	 * @since 4.1.0
+	 * @since 4.4.0 Added the ability to pass a post ID to `$post`.
+	 *
+	 * @global int     $id
+	 * @global WP_User $authordata
+	 * @global string  $currentday
+	 * @global string  $currentmonth
+	 * @global int     $page
+	 * @global array   $pages
+	 * @global int     $multipage
+	 * @global int     $more
+	 * @global int     $numpages
+	 *
+	 * @param WP_Post|object|int $post WP_Post instance or Post ID/object.
+	 * @return true True when finished.
+	 */
+	public function setup_postdata(object $post) {
+		global $id, $page, $pages, $multipage, $more, $numpages;
+
+		if (!get_object_vars($post)) {
+			return false;
+		}
+
+		if (!($post instanceof WP_Post)) {
+			$post = new WP_Post($post);
+		}
+
+		$elements = $this->generate_postdata($post);
+		if (false === $elements) {
+			return;
+		}
+
+		$id        = $elements['id'];
+		$page      = $elements['page'];
+		$pages     = $elements['pages'];
+		$multipage = $elements['multipage'];
+		$more      = $elements['more'];
+		$numpages  = $elements['numpages'];
+
+		/**
+		 * Fires once the post data has been set up.
+		 *
+		 * @since 2.8.0
+		 * @since 4.1.0 Introduced `$query` parameter.
+		 *
+		 * @param WP_Post  $post  The Post object (passed by reference).
+		 * @param WP_Query $query The current Query object (passed by reference).
+		 */
+		do_action_ref_array('the_post', [ & $post, &$this]);
+
+		return true;
+	}
+
+	/**
+	 * Generate post data.
+	 *
+	 * @since 5.2.0
+	 *
+	 * @param WP_Post|object $post WP_Post instance or Post ID/object.
+	 * @return array|false Elements of post or false on failure.
+	 */
+	public function generate_postdata(object $post) {
+		if (!get_object_vars($post)) {
+			return false;
+		}
+
+		if (!($post instanceof WP_Post)) {
+			$post = new WP_Post($post);
+		}
+
+		$id        = (int) $post->ID;
+		$numpages  = 1;
+		$multipage = 0;
+		$page      = $this->get('page');
+		if (!$page) {
+			$page = 1;
+		}
+
+		$content = $post->post_content;
+		if (false !== strpos($content, '<!--nextpage-->')) {
+			$content = str_replace("\n<!--nextpage-->\n", '<!--nextpage-->', $content);
+			$content = str_replace("\n<!--nextpage-->", '<!--nextpage-->', $content);
+			$content = str_replace("<!--nextpage-->\n", '<!--nextpage-->', $content);
+
+			// Remove the nextpage block delimiters, to avoid invalid block structures in the split content.
+			$content = str_replace('<!-- wp:nextpage -->', '', $content);
+			$content = str_replace('<!-- /wp:nextpage -->', '', $content);
+
+			// Ignore nextpage at the beginning of the content.
+			if (0 === strpos($content, '<!--nextpage-->')) {
+				$content = substr($content, 15);
+			}
+
+			$pages = explode('<!--nextpage-->', $content);
+		} else {
+			$pages = [$post->post_content];
+		}
+
+		/**
+		 * Filters the "pages" derived from splitting the post content.
+		 *
+		 * "Pages" are determined by splitting the post content based on the presence
+		 * of `<!-- nextpage -->` tags.
+		 *
+		 * @since 4.4.0
+		 *
+		 * @param string[] $pages Array of "pages" from the post content split by `<!-- nextpage -->` tags.
+		 * @param WP_Post  $post  Current post object.
+		 */
+		$pages = apply_filters('content_pagination', $pages, $post);
+
+		$numpages = count($pages);
+
+		if ($numpages > 1) {
+			if ($page > 1) {
+				$more = 1;
+			}
+			$multipage = 1;
+		} else {
+			$multipage = 0;
+			$more      = 0;
+		}
+
+		$elements = compact('id', 'page', 'pages', 'multipage', 'more', 'numpages');
+
+		return $elements;
+	}
+	/**
+	 * After looping through a nested query, this function
+	 * restores the $post global to the current post in this query.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @global WP_Post $post Global post object.
+	 */
+	public function reset_postdata() {
+		if (!empty($this->post)) {
+			$GLOBALS['post'] = $this->post;
+			$this->setup_postdata($this->post);
+		}
+	}
+
+	/**
+	 * Set up the amount of found posts and the number of pages (if limit clause was used)
+	 * for the current query.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @global wpdb $wpdb WordPress database abstraction object.
+	 *
+	 * @param array  $q      Query variables.
+	 * @param string $limits LIMIT clauses of the query.
+	 */
+	private function set_found_posts($q, $limits) {
+		global $wpdb;
+
+		// Bail if posts is an empty array. Continue if posts is an empty string,
+		// null, or false to accommodate caching plugins that fill posts later.
+		if ($q['no_found_rows'] || (is_array($this->posts) && !$this->posts)) {
+			return;
+		}
+
+		if (!empty($limits)) {
+			/**
+			 * Filters the query to run for retrieving the found posts.
+			 *
+			 * @since 2.1.0
+			 *
+			 * @param string   $found_posts_query The query to run to find the found posts.
+			 * @param WP_Query $query             The WP_Query instance (passed by reference).
+			 */
+			$found_posts_query = apply_filters_ref_array('found_posts_query', ['SELECT FOUND_ROWS()', &$this]);
+
+			$this->found_posts = (int) $wpdb->get_var($found_posts_query);
+		} else {
+			if (is_array($this->posts)) {
+				$this->found_posts = count($this->posts);
+			} else {
+				if (null === $this->posts) {
+					$this->found_posts = 0;
+				} else {
+					$this->found_posts = 1;
+				}
+			}
+		}
+
+		/**
+		 * Filters the number of found posts for the query.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param int      $found_posts The number of posts found.
+		 * @param WP_Query $query       The WP_Query instance (passed by reference).
+		 */
+		$this->found_posts = (int) apply_filters_ref_array('found_posts', [$this->found_posts, &$this]);
+
+		if (!empty($limits)) {
+			$this->max_num_pages = ceil($this->found_posts / $q['posts_per_page']);
+		}
+	}
 }
