@@ -24,10 +24,8 @@ namespace Controller;
  */
 class Route {
 
-	private $handler        = '';
-	private $param          = '';
-	private $query          = '';
 	private $is_api_request = false;
+	private $url_info       = [];
 
 	/**
 	 * 移除安装目录并按预定 URL 规则解析控制器及参数
@@ -35,24 +33,16 @@ class Route {
 	 * - 常规请求：将路径切割为：控制类/请求参数
 	 */
 	public function __construct() {
-		$request              = str_ireplace('/' . DIR_NAME . '/', '', $_SERVER['REQUEST_URI']);
-		$request_arr          = parse_url($request);
-		$path                 = $request_arr['path'] ?? '';
-		$this->query          = $request_arr['query'] ?? '';
-		$this->api_prefix     = static::get_api_prefix();
-		$this->is_api_request = false;
+		$request  = str_ireplace('/' . DIR_NAME . '/', '', $_SERVER['REQUEST_URI']);
+		$url_info = parse_url($request);
+		$path     = $url_info['path'] ?? '';
 
+		$this->api_prefix = Dispatcher_API::get_api_prefix();
 		if (str_starts_with($path, $this->api_prefix)) {
 			$this->is_api_request = true;
-			$handler              = str_replace($this->api_prefix . '/', '', $path);
-		} else {
-			$url_info    = explode('/', $path, 2);
-			$handler     = $url_info[0];
-			$this->param = $url_info[1] ?? '';
 		}
 
-		// 将 URI 路径转为命名空间
-		$this->handler = $handler ? str_replace('/', '\\', $handler) : 'index';
+		$this->url_info = $url_info;
 	}
 
 	public function render() {
@@ -64,18 +54,10 @@ class Route {
 	}
 
 	private function template_render() {
-		new Template_Dispatcher($this->handler, $this->param);
+		new Dispatcher_Template($this->url_info);
 	}
 
 	private function api_render() {
-		if (class_exists($this->handler)) {
-			new $this->handler($this->query);
-		} else {
-			http_response_code(404);
-		}
-	}
-
-	public static function get_api_prefix(): string {
-		return 'wp-json';
+		new Dispatcher_API($this->url_info);
 	}
 }

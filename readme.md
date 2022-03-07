@@ -25,34 +25,34 @@ WP 面向广大普通用户。本项目主要面向具有WP使用经验，同时
 
 ## API 路由
 Api 部分参考 wnd-frontend 插件
-- /api/
+- /{{api_prefix}}/
 
 ### 内容筛选
-- /api/users/
-- /api/posts/
-- /api/comments/
-- /api/terms/
+- /{{api_prefix}}/users/
+- /{{api_prefix}}/posts/
+- /{{api_prefix}}/comments/
+- /{{api_prefix}}/terms/
 
 ### 操作节点
-- /api/action/
-- /api/module/
-- /api/endpoint/
-- /api/jsonget/
+- /{{api_prefix}}/action/
+- /{{api_prefix}}/module/
+- /{{api_prefix}}/endpoint/
+- /{{api_prefix}}/jsonget/
 
 ### 主题拓展操作节点
-- /api/theme/action/
+- /{{api_prefix}}/theme/action/
 ……
 
 ### 插件拓展操作节点
-- /api/extend/action/
+- /{{api_prefix}}/extend/action/
 ……
 
 ### 数据读取
-- /api/jsonget/
-- /api/jsonget/user/{{id_or_slug}}
-- /api/jsonget/post/{{id_or_slug}}
-- /api/jsonget/term/{{id_or_slug}}
-- /api/jsonget/comment/{{id_or_slug}}
+- /{{api_prefix}}/jsonget/
+- /{{api_prefix}}/jsonget/user/{{id_or_slug}}
+- /{{api_prefix}}/jsonget/post/{{id_or_slug}}
+- /{{api_prefix}}/jsonget/term/{{id_or_slug}}
+- /{{api_prefix}}/jsonget/comment/{{id_or_slug}}
 
 ## 渲染 URL 路由
 - /user/ 			                用户

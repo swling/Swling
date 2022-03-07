@@ -9,20 +9,24 @@ use WP_Query;
  * - 定义主查询：global $wp_query、global $wp_the_query;
  * - 解析 WP_Query 参数
  */
-class Template_Dispatcher {
+class Dispatcher_Template {
 
 	private $wp_query_args = [];
 	private $template_file = '';
+	private $is_home       = true;
 	private $handler;
 	private $param;
 
-	public function __construct(string $handler, string $param) {
-		$this->handler = $handler;
-		$this->param   = $param;
+	public function __construct(array $url_info) {
+		$path          = $url_info['path'];
+		$path_info     = explode('/', $path);
+		$this->handler = $path_info[0];
+		$this->param   = $path_info[1] ?? '';
+
 		$this->parse_query();
 
 		global $wp_query;
-		if ($this->wp_query_args) {
+		if ($this->wp_query_args or $this->is_home) {
 			$wp_query = new WP_Query($this->wp_query_args);
 		}
 
@@ -39,6 +43,7 @@ class Template_Dispatcher {
 
 		if (!$this->handler) {
 			$this->template_file = 'index.php';
+			$this->is_home       = true;
 			return;
 		}
 
