@@ -37,8 +37,8 @@ require ABSPATH . WPINC . '/template.php';
 timer_start();
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
-// define('DB_NAME', 'sanks_wndwp');
-define('DB_NAME', 'wordpress_dev');
+define('DB_NAME', 'sanks_wndwp');
+// define('DB_NAME', 'wordpress_dev');
 define('DB_USER', 'root');
 define('DB_PASSWORD', '');
 define('DB_HOST', 'localhost');
@@ -68,9 +68,10 @@ $wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $wpdb->set_prefix($table_prefix);
 
 // 创建数据库依赖 wpdb
-require ABSPATH . 'src/wp-core/admin/schema.php';
-require ABSPATH . 'src/wp-core/admin/dbDelta.php';
 if (isset($_GET['install'])) {
+	require ABSPATH . 'src/wp-core/admin/schema.php';
+	require ABSPATH . 'src/wp-core/admin/dbDelta.php';
+
 	dbDelta('all');
 }
 

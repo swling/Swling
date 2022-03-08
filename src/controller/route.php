@@ -1,26 +1,12 @@
 <?php
 namespace Controller;
 
+use Controller\Dispatcher_API;
+
 /**
  * ## API 路由
- * Api 部分参考 wnd-frontend 插件，仅支持 POST 及 GET 请求
- * - /{{api_prefix}}/
- * - /{{api_prefix}}/action/{{action}}
- * ……
- *
- * ### 主题拓展操作节点
- * - /{{api_prefix}}/theme/action/{{action}}
- * ……
- *
- * ### 插件拓展操作节点
- * - /{{api_prefix}}/extend/action/{{action}}
- * ……
- *
- * ## 渲染 URL 路由 仅支持 GET 请求
- * - /user/ 			                用户
- * - /console/			                控制台
- * - /{{post_type}}/{{id_or_slug}}	    正文
- * - /{{taxonomy}}/{{id_or_slug}}		分类
+ * - Api 部分参考 wnd-frontend 插件，仅支持 POST 及 GET 请求
+ * - Template渲染 URL 路由 仅支持 GET 请求
  */
 class Route {
 
@@ -37,27 +23,19 @@ class Route {
 		$url_info = parse_url($request);
 		$path     = $url_info['path'] ?? '';
 
-		$this->api_prefix = Dispatcher_API::get_api_prefix();
-		if (str_starts_with($path, $this->api_prefix)) {
+		$api_prefix = Dispatcher_API::get_api_prefix();
+		if (str_starts_with($path, $api_prefix)) {
 			$this->is_api_request = true;
 		}
 
 		$this->url_info = $url_info;
 	}
 
-	public function render() {
-		if (!$this->is_api_request) {
-			$this->template_render();
+	public function dispatch() {
+		if ($this->is_api_request) {
+			new Dispatcher_API($this->url_info);
 		} else {
-			$this->api_render();
+			new Dispatcher_Template($this->url_info);
 		}
-	}
-
-	private function template_render() {
-		new Dispatcher_Template($this->url_info);
-	}
-
-	private function api_render() {
-		new Dispatcher_API($this->url_info);
 	}
 }

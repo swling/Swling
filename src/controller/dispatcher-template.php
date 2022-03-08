@@ -8,6 +8,13 @@ use WP_Query;
  * - 指派模板文件
  * - 定义主查询：global $wp_query、global $wp_the_query;
  * - 解析 WP_Query 参数
+ *
+ * ## 渲染 URL 路由 仅支持 GET 请求
+ * - /user 				                用户
+ * - /console			                控制台
+ * - /{{post_type}}/{{id_or_slug}}	    正文
+ * - /{{post_type}}					    post type archive
+ * - /{{taxonomy}}						taxonomy term archive
  */
 class Dispatcher_Template {
 
@@ -23,6 +30,10 @@ class Dispatcher_Template {
 		$this->handler = $path_info[0];
 		$this->param   = $path_info[1] ?? '';
 
+		$this->load();
+	}
+
+	private function load() {
 		$this->parse_query();
 
 		global $wp_query;
@@ -34,6 +45,7 @@ class Dispatcher_Template {
 		global $wp_the_query;
 		$wp_the_query = $wp_query;
 
+		// load template file
 		include TEMPLATEPATH . '/' . $this->template_file;
 	}
 
