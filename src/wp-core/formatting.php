@@ -1,44 +1,122 @@
 <?php
 
 /**
- * Sanitizes a string into a slug, which can be used in URLs or HTML attributes.
+ * Sanitizes a string key.
  *
- * By default, converts accent characters to ASCII characters and further
- * limits the output to alphanumeric characters, underscore (_) and dash (-)
- * through the {@see 'sanitize_title'} filter.
+ * Keys are used as internal identifiers. Lowercase alphanumeric characters,
+ * dashes, and underscores are allowed.
  *
- * If `$title` is empty and `$fallback_title` is set, the latter will be used.
+ * @since 3.0.0
  *
- * @since 1.0.0
- *
- * @param string $title          The string to be sanitized.
- * @param string $fallback_title Optional. A title to use if $title is empty. Default empty.
- * @param string $context        Optional. The operation for which the string is sanitized.
- *                               When set to 'save', the string runs through remove_accents().
- *                               Default 'save'.
- * @return string The sanitized string.
+ * @param string $key String key.
+ * @return string Sanitized key.
  */
-function sanitize_title( $title, $fallback_title = '', $context = 'save' ) {
-	$raw_title = $title;
+function sanitize_key($key) {
+	$sanitized_key = '';
 
-	if ( 'save' === $context ) {
-		$title = remove_accents( $title );
+	if (is_scalar($key)) {
+		$sanitized_key = strtolower($key);
+		$sanitized_key = preg_replace('/[^a-z0-9_\-]/', '', $sanitized_key);
 	}
 
 	/**
-	 * Filters a sanitized title string.
+	 * Filters a sanitized key string.
 	 *
-	 * @since 1.2.0
+	 * @since 3.0.0
 	 *
-	 * @param string $title     Sanitized title.
-	 * @param string $raw_title The title prior to sanitization.
-	 * @param string $context   The context for which the title is being sanitized.
+	 * @param string $sanitized_key Sanitized key.
+	 * @param string $key           The key prior to sanitization.
 	 */
-	$title = apply_filters( 'sanitize_title', $title, $raw_title, $context );
+	return apply_filters('sanitize_key', $sanitized_key, $key);
+}
 
-	if ( '' === $title || false === $title ) {
-		$title = $fallback_title;
+/**
+ * Adds slashes to a string or recursively adds slashes to strings within an array.
+ *
+ * This should be used when preparing data for core API that expects slashed data.
+ * This should not be used to escape data going directly into an SQL query.
+ *
+ * @since 3.6.0
+ * @since 5.5.0 Non-string values are left untouched.
+ *
+ * @param string|array $value String or array of data to slash.
+ * @return string|array Slashed `$value`.
+ */
+function wp_slash($value) {
+	if (is_array($value)) {
+		$value = array_map('wp_slash', $value);
 	}
 
-	return $title;
+	if (is_string($value)) {
+		return addslashes($value);
+	}
+
+	return $value;
+}
+
+/**
+ * Removes slashes from a string or recursively removes slashes from strings within an array.
+ *
+ * This should be used to remove slashes from data passed to core API that
+ * expects data to be unslashed.
+ *
+ * @since 3.6.0
+ *
+ * @param string|array $value String or array of data to unslash.
+ * @return string|array Unslashed `$value`.
+ */
+function wp_unslash($value) {
+	return stripslashes_deep($value);
+}
+
+/**
+ * Navigates through an array, object, or scalar, and removes slashes from the values.
+ *
+ * @since 2.0.0
+ *
+ * @param mixed $value The value to be stripped.
+ * @return mixed Stripped value.
+ */
+function stripslashes_deep($value) {
+	return map_deep($value, 'stripslashes_from_strings_only');
+}
+
+/**
+ * Callback function for `stripslashes_deep()` which strips slashes from strings.
+ *
+ * @since 4.4.0
+ *
+ * @param mixed $value The array or string to be stripped.
+ * @return mixed The stripped value.
+ */
+function stripslashes_from_strings_only($value) {
+	return is_string($value) ? stripslashes($value) : $value;
+}
+
+/**
+ * Maps a function to all non-iterable elements of an array or an object.
+ *
+ * This is similar to `array_walk_recursive()` but acts upon objects too.
+ *
+ * @since 4.4.0
+ *
+ * @param mixed    $value    The array, object, or scalar.
+ * @param callable $callback The function to map onto $value.
+ * @return mixed The value with the callback applied to all non-arrays and non-objects inside it.
+ */
+function map_deep($value, $callback) {
+	if (is_array($value)) {
+		foreach ($value as $index => $item) {
+			$value[$index] = map_deep($item, $callback);
+		}
+	} elseif (is_object($value)) {
+		$object_vars = get_object_vars($value);
+		foreach ($object_vars as $property_name => $property_value) {
+			$value->$property_name = map_deep($property_value, $callback);
+		}
+	} else {
+		$value = call_user_func($callback, $value);
+	}
+
+	return $value;
 }

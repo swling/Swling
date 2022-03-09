@@ -370,3 +370,65 @@ function get_num_queries() {
 	global $wpdb;
 	return $wpdb->num_queries;
 }
+
+/**
+ * Merges user defined arguments into defaults array.
+ *
+ * This function is used throughout WordPress to allow for both string or array
+ * to be merged into another array.
+ *
+ * @since 2.2.0
+ * @since 2.3.0 `$args` can now also be an object.
+ *
+ * @param string|array|object $args     Value to merge with $defaults.
+ * @param array               $defaults Optional. Array that serves as the defaults.
+ *                                      Default empty array.
+ * @return array Merged user defined values with defaults.
+ */
+function wp_parse_args($args, $defaults = []) {
+	if (is_object($args)) {
+		$parsed_args = get_object_vars($args);
+	} elseif (is_array($args)) {
+		$parsed_args = &$args;
+	} else {
+		wp_parse_str($args, $parsed_args);
+	}
+
+	if (is_array($defaults) && $defaults) {
+		return array_merge($defaults, $parsed_args);
+	}
+	return $parsed_args;
+}
+
+/**
+ * Parses a string into variables to be stored in an array.
+ *
+ * @since 2.2.1
+ *
+ * @param string $string The string to be parsed.
+ * @param array  $array  Variables will be stored in this array.
+ */
+function wp_parse_str($string, &$array) {
+	parse_str((string) $string, $array);
+
+	/**
+	 * Filters the array of variables derived from a parsed string.
+	 *
+	 * @since 2.2.1
+	 *
+	 * @param array $array The array populated with variables.
+	 */
+	$array = apply_filters('wp_parse_str', $array);
+}
+
+/**
+ * Convert a value to non-negative integer.
+ *
+ * @since 2.5.0
+ *
+ * @param mixed $maybeint Data you wish to have converted to a non-negative integer.
+ * @return int A non-negative integer.
+ */
+function absint($maybeint) {
+	return abs((int) $maybeint);
+}

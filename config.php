@@ -18,16 +18,18 @@ define('TEMPLATEPATH', ABSPATH . 'content/themes/default');
 require ABSPATH . 'autoloader.php';
 
 // init
+require ABSPATH . WPINC . '/default-constants.php';
 require ABSPATH . WPINC . '/load.php';
 require ABSPATH . WPINC . '/repair.php';
 require ABSPATH . WPINC . '/functions.php';
-// require ABSPATH . WPINC . '/formatting.php';
 require ABSPATH . WPINC . '/class-wpdb.php';
 require ABSPATH . WPINC . '/plugin.php';
 require ABSPATH . WPINC . '/default-hook.php';
-
 require ABSPATH . WPINC . '/query.php';
+
+require ABSPATH . WPINC . '/formatting.php';
 require ABSPATH . WPINC . '/option.php';
+require ABSPATH . WPINC . '/meta.php';
 require ABSPATH . WPINC . '/taxonomy.php';
 require ABSPATH . WPINC . '/post.php';
 require ABSPATH . WPINC . '/term.php';
