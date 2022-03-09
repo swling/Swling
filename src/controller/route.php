@@ -19,7 +19,7 @@ class Route {
 	 * - 常规请求：将路径切割为：控制类/请求参数
 	 */
 	public function __construct() {
-		$request  = str_ireplace('/' . DIR_NAME . '/', '', $_SERVER['REQUEST_URI']);
+		$request  = trim($_SERVER['REQUEST_URI'], '/');
 		$url_info = parse_url($request);
 		$path     = $url_info['path'] ?? '';
 

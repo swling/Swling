@@ -1,4 +1,79 @@
 <?php
+/**
+ * WordPress Query API
+ *
+ * The query API attempts to get which part of WordPress the user is on. It
+ * also provides functionality for getting URL query information.
+ *
+ * @link https://developer.wordpress.org/themes/basics/the-loop/ More information on The Loop.
+ *
+ * @package WordPress
+ * @subpackage Query
+ */
+
+/**
+ * Retrieves the value of a query variable in the WP_Query class.
+ *
+ * @since 1.5.0
+ * @since 3.9.0 The `$default` argument was introduced.
+ *
+ * @global WP_Query $wp_query WordPress Query object.
+ *
+ * @param string $var       The variable key to retrieve.
+ * @param mixed  $default   Optional. Value to return if the query variable is not set. Default empty.
+ * @return mixed Contents of the query variable.
+ */
+function get_query_var($var, $default = '') {
+	global $wp_query;
+	return $wp_query->get($var, $default);
+}
+
+/**
+ * Retrieves the currently queried object.
+ *
+ * Wrapper for WP_Query::get_queried_object().
+ *
+ * @since 3.1.0
+ *
+ * @global WP_Query $wp_query WordPress Query object.
+ *
+ * @return WP_Term|WP_Post_Type|WP_Post|WP_User|null The queried object.
+ */
+function get_queried_object() {
+	global $wp_query;
+	return $wp_query->get_queried_object();
+}
+
+/**
+ * Retrieves the ID of the currently queried object.
+ *
+ * Wrapper for WP_Query::get_queried_object_id().
+ *
+ * @since 3.1.0
+ *
+ * @global WP_Query $wp_query WordPress Query object.
+ *
+ * @return int ID of the queried object.
+ */
+function get_queried_object_id() {
+	global $wp_query;
+	return $wp_query->get_queried_object_id();
+}
+
+/**
+ * Sets the value of a query variable in the WP_Query class.
+ *
+ * @since 2.2.0
+ *
+ * @global WP_Query $wp_query WordPress Query object.
+ *
+ * @param string $var   Query variable key.
+ * @param mixed  $value Query variable value.
+ */
+function set_query_var($var, $value) {
+	global $wp_query;
+	$wp_query->set($var, $value);
+}
 
 /**
  * Determines whether the query is the main query.

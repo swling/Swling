@@ -106,10 +106,41 @@ class WP_Query {
 	 */
 	public $max_num_pages = 0;
 
+	/**
+	 * Holds the data for a single object that is queried.
+	 *
+	 * Holds the contents of a post, page, category, attachment.
+	 *
+	 * @since 1.5.0
+	 * @var WP_Term|WP_Post_Type|WP_Post|WP_User|null
+	 */
+	public $queried_object;
+
+	/**
+	 * The ID of the queried object.
+	 *
+	 * @since 1.5.0
+	 * @var int
+	 */
+	public $queried_object_id;
+
+	/**
+	 * SQL for the database query.
+	 *
+	 * @since 2.0.1
+	 * @var string
+	 */
+	public $request;
+
 	private static $default_query = [
+		'ID'             => '',
+		'post_name'      => '',
+		'post_parent'    => '',
 		'post_type'      => 'post',
 		'post_status'    => 'publish',
 		'tax_query'      => [],
+		'meta_query'     => [],
+		'date_query'     => [],
 		'fields'         => '',
 		'posts_per_page' => 10,
 		'no_found_rows'  => false,
@@ -213,7 +244,21 @@ class WP_Query {
 		if ($qv['tax_query']) {
 			$this->is_archive = true;
 			$this->is_tax     = true;
+		} elseif ('' !== $qv['post_name'] or $qv['ID']) {
+			if ('page' == $qv['post_type']) {
+				$this->is_page = true;
+			} else {
+				$this->is_single = true;
+			}
+		} elseif (!empty($qv['post_type']) && !is_array($qv['post_type'])) {
+			$post_type_obj = get_post_type_object($qv['post_type']);
+			if (!empty($post_type_obj->has_archive)) {
+				$this->is_post_type_archive = true;
+				$this->is_archive           = true;
+			}
 		}
+
+		$this->is_singular = $this->is_single || $this->is_page;
 
 		if (!$this->is_singular and !$this->is_archive and !$this->is_search and !$this->is_404) {
 			$this->is_home = true;
@@ -309,8 +354,11 @@ class WP_Query {
 		// excute sql query
 		$this->posts = $wpdb->get_results($this->request);
 
-		$this->post_count = count($this->posts);
-		$this->set_found_posts($q, $this->limits);
+		if ($this->posts) {
+			$this->post_count = count($this->posts);
+			$this->set_found_posts($q, $this->limits);
+			$this->post = reset($this->posts);
+		}
 
 		return $this->posts;
 	}
@@ -325,6 +373,10 @@ class WP_Query {
 		$wpdb = &$this->wpdb;
 		$q    = &$this->query_vars;
 		foreach ($q as $post_filed => $value) {
+			if ('' === $value or 'any' == $value) {
+				continue;
+			}
+
 			if (in_array($post_filed, ['post_name', 'post_type', 'post_status', 'post_mime_type'])) {
 				if (is_array($value)) {
 					$value = array_map('esc_sql', $value);
@@ -408,6 +460,79 @@ class WP_Query {
 		if (!empty($this->groupby)) {
 			$this->groupby = 'GROUP BY ' . $this->groupby;
 		}
+	}
+
+	/**
+	 * Retrieves the currently queried object.
+	 *
+	 * If queried object is not set, then the queried object will be set from
+	 * the category, tag, taxonomy, posts page, single post, page, or author
+	 * query variable. After it is set up, it will be returned.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return WP_Term|WP_Post_Type|WP_Post|WP_User|null The queried object.
+	 */
+	public function get_queried_object() {
+		if ($this->queried_object) {
+			return $this->queried_object;
+		}
+
+		$this->queried_object    = null;
+		$this->queried_object_id = null;
+
+		if ($this->is_tax) {
+			// For other tax queries, grab the first term from the first clause.
+			if (!empty($this->tax_query->queried_terms)) {
+				$queried_taxonomies = array_keys($this->tax_query->queried_terms);
+				$matched_taxonomy   = reset($queried_taxonomies);
+				$query              = $this->tax_query->queried_terms[$matched_taxonomy];
+
+				if (!empty($query['terms'])) {
+					if ('term_id' === $query['field']) {
+						$term = get_term(reset($query['terms']));
+					} else {
+						$term = get_term_by($query['field'], reset($query['terms']), $matched_taxonomy);
+					}
+				}
+			}
+
+			if (!empty($term) && !is_wp_error($term)) {
+				$this->queried_object    = $term;
+				$this->queried_object_id = (int) $term->term_id;
+			}
+		} elseif ($this->is_post_type_archive) {
+			$post_type = $this->get('post_type');
+			if (is_array($post_type)) {
+				$post_type = reset($post_type);
+			}
+			$this->queried_object = get_post_type_object($post_type);
+		} elseif ($this->is_singular && !empty($this->post)) {
+			$this->queried_object    = $this->post;
+			$this->queried_object_id = (int) $this->post->ID;
+		} elseif ($this->is_author) {
+			$this->queried_object_id = (int) $this->get('author');
+			$this->queried_object    = get_userdata($this->queried_object_id);
+		}
+
+		return $this->queried_object;
+	}
+
+	/**
+	 * Retrieves the ID of the currently queried object.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return int
+	 */
+	public function get_queried_object_id() {
+		$this->get_queried_object();
+
+		if (isset($this->queried_object_id)) {
+			return $this->queried_object_id;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -512,9 +637,6 @@ class WP_Query {
 	 * @since 4.4.0 Added the ability to pass a post ID to `$post`.
 	 *
 	 * @global int     $id
-	 * @global WP_User $authordata
-	 * @global string  $currentday
-	 * @global string  $currentmonth
 	 * @global int     $page
 	 * @global array   $pages
 	 * @global int     $multipage
