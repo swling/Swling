@@ -43,7 +43,7 @@ https://stackoverflow.com/questions/50992188/how-to-push-a-shallow-clone-to-a-ne
 - 需要注意层级分类法，和标签分类法 设置的区别 https://wndwp.com/archives/94
 
 - 函数出错若需包含信息，返回 wp_error 类中 抛出异常
-- wpdb_handler 改为单例模式
+<!-- - wpdb_handler 改为单例模式 -->
 
 ## 数据库操作相关函数返回值规范
 - Get : data or false

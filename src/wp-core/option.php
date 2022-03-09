@@ -67,10 +67,11 @@
  *               from a database stored option value. If there is no option in the database,
  *               boolean `false` is returned.
  */
-function get_option(string $option, $default = false) {
+function get_option(string $option_name, $default = false) {
 	try {
-		$handler = Model\WPDB_Handler_Option::get_instance();
-		return $handler->get_by('option_name', $option)->option_value ?? $default;
+		$handler      = Model\WPDB_Handler_Option::get_instance();
+		$option_value = $handler->get_by('option_name', $option_name)->option_value ?? $default;
+		return maybe_unserialize($option_value);
 	} catch (Exception $e) {
 		return $default;
 	}
@@ -103,8 +104,24 @@ function get_option(string $option, $default = false) {
  * @return bool True if the value was updated, false otherwise.
  */
 function update_option(string $option_name, $option_value, bool $autoload = true): bool{
-	$autoload = $autoload ? 'yes' : 'no';
-	$data     = compact('option_name', 'option_value', 'autoload');
+	/**
+	 * If the new and old values are the same, no need to update.
+	 *
+	 * Unserialized values will be adequate in most cases. If the unserialized
+	 * data differs, the (maybe) serialized data is checked to avoid
+	 * unnecessary database calls for otherwise identical object instances.
+	 *
+	 * See https://core.trac.wordpress.org/ticket/38903
+	 */
+	$old_value = get_option($option_name);
+	if ($option_value === $old_value || (maybe_serialize($option_value) === maybe_serialize($old_value))) {
+		return false;
+	}
+
+	$option_value = maybe_serialize($option_value);
+	$autoload     = $autoload ? 'yes' : 'no';
+	$data         = compact('option_name', 'option_value', 'autoload');
+
 	try {
 		$handler  = Model\WPDB_Handler_Option::get_instance();
 		$old_data = $handler->get_by('option_name', $option_name);
