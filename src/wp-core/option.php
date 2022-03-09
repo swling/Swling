@@ -102,8 +102,9 @@ function get_option(string $option, $default = false) {
  *                              the default value is 'yes'. Default null.
  * @return bool True if the value was updated, false otherwise.
  */
-function update_option(string $option_name, $option_value, $autoload = false): bool{
-	$data = compact('option_name', 'option_value', 'autoload');
+function update_option(string $option_name, $option_value, bool $autoload = true): bool{
+	$autoload = $autoload ? 'yes' : 'no';
+	$data     = compact('option_name', 'option_value', 'autoload');
 	try {
 		$handler  = Model\WPDB_Handler_Option::get_instance();
 		$old_data = $handler->get_by('option_name', $option_name);
@@ -164,7 +165,7 @@ function delete_option(string $option_name): bool {
  *                                Default is enabled. Accepts 'no' to disable for legacy reasons.
  * @return bool True if the option was added, false otherwise.
  */
-function add_option(string $option_name, $option_value, $autoload = 'yes'): bool {
+function add_option(string $option_name, $option_value, bool $autoload = true): bool {
 	if (get_option($option_name)) {
 		return false;
 	}
