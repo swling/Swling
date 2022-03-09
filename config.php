@@ -27,6 +27,7 @@ require ABSPATH . WPINC . '/plugin.php';
 require ABSPATH . WPINC . '/default-hook.php';
 
 require ABSPATH . WPINC . '/query.php';
+require ABSPATH . WPINC . '/option.php';
 require ABSPATH . WPINC . '/taxonomy.php';
 require ABSPATH . WPINC . '/post.php';
 require ABSPATH . WPINC . '/term.php';
