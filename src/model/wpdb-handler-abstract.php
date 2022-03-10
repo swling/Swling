@@ -5,14 +5,21 @@ use Exception;
 use Utility\Singleton_Trait;
 
 /**
- * 单行数据表操作抽象基类
+ * # 单行数据表操作抽象基类
  * - 本类操作均针对单行
  * - 在 wpdb 的基础上统一添加 Hook
+ * - meta、term_relationships 读取与其他表紧密关联，因此不适用于本类，对应为独立类 @see Meta_Handler(); @see Term_Relationships_Handler();
+ *
+ * ### return
+ * - Get : data（object） or false
+ * - Insert/Update : ID（int） or 0
+ * - Delete :  ID (int) or 0
  */
 abstract class WPDB_Handler_Abstract {
 
 	protected $wpdb;
 	protected $table_name;
+	protected $table;
 	protected $object_name;
 	protected $primary_id_column;
 	protected $required_columns    = [];

@@ -46,7 +46,7 @@ https://stackoverflow.com/questions/50992188/how-to-push-a-shallow-clone-to-a-ne
 <!-- - wpdb_handler 改为单例模式 -->
 
 ## 数据库操作相关函数返回值规范
-- Get : data or false
-- Insert/Update : data（int） or WP_Error
-- Delete/Set : bool （true/false）
+- Get : data (单行：objcet; 多行：array) or false
+- Insert/Update : ID（int） or 0
+- Delete :  ID (int) or 0
 
