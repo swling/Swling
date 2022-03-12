@@ -24,7 +24,7 @@ function _get_meta_table($type) {
 }
 
 function get_meta_handler(string $meta_type): object{
-	$handler = Model\WPDB_Handler_Meta::get_instance();
+	$handler = WP_Core\Model\WPDB_Handler_Meta::get_instance();
 	$handler->set_meta_type($meta_type);
 	return $handler;
 }

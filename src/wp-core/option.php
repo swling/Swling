@@ -69,7 +69,7 @@
  */
 function get_option(string $option_name, $default = false) {
 	try {
-		$handler      = Model\WPDB_Handler_Option::get_instance();
+		$handler      = WP_Core\Model\WPDB_Handler_Option::get_instance();
 		$option_value = $handler->get_by('option_name', $option_name)->option_value ?? $default;
 		return maybe_unserialize($option_value);
 	} catch (Exception $e) {
@@ -123,7 +123,7 @@ function update_option(string $option_name, $option_value, bool $autoload = true
 	$data         = compact('option_name', 'option_value', 'autoload');
 
 	try {
-		$handler  = Model\WPDB_Handler_Option::get_instance();
+		$handler  = WP_Core\Model\WPDB_Handler_Option::get_instance();
 		$old_data = $handler->get_by('option_name', $option_name);
 		if ($old_data) {
 			$new_data = array_merge((array) $old_data, $data);
@@ -148,7 +148,7 @@ function update_option(string $option_name, $option_value, bool $autoload = true
  */
 function delete_option(string $option_name): bool {
 	try {
-		$handler = Model\WPDB_Handler_Option::get_instance();
+		$handler = WP_Core\Model\WPDB_Handler_Option::get_instance();
 
 		$old_data = $handler->get_by('option_name', $option_name);
 		if (!$old_data) {

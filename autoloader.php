@@ -9,8 +9,8 @@ spl_autoload_register(function ($class) {
 	$filename = str_replace('_', '-', $class);
 
 	/**
-	 * ### WordPress 类自动加载
-	 * - 目录：wp-includes
+	 * ### 不含命名空间的 WP 类自动加载
+	 * - 目录：wp-core
 	 * - 统一转为小写
 	 * - 路径添加 【class-】前缀
 	 *
@@ -18,7 +18,7 @@ spl_autoload_register(function ($class) {
 	 * - Component 类：路径保留大小写
 	 * - 本框架其他类：路径统一转小写
 	 */
-	if (0 === stripos($class, 'wp_')) {
+	if (!str_contains($class, '\\')) {
 		$src_dir  = $src_dir . '/wp-core';
 		$filename = 'class-' . strtolower($filename);
 	} else if (0 !== stripos($class, 'component')) {

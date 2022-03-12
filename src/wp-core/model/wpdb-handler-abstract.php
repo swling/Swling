@@ -1,5 +1,5 @@
 <?php
-namespace Model;
+namespace WP_Core\Model;
 
 use Exception;
 use Utility\Singleton_Trait;

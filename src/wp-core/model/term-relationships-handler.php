@@ -1,8 +1,8 @@
 <?php
-namespace Model;
+namespace WP_Core\Model;
 
 use Exception;
-use Model\WPDB_Handler_Term;
+use WP_Core\Model\WPDB_Handler_Term;
 use Utility\Singleton_Trait;
 
 /**

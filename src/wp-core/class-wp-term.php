@@ -99,7 +99,7 @@ final class WP_Term {
 	 * @return WP_Term|false WP_Term instance on success, false for miscellaneous failure.
 	 */
 	public static function get_instance(int $term_id) {
-		$handler = Model\WPDB_Handler_Term::get_instance();
+		$handler = WP_Core\Model\WPDB_Handler_Term::get_instance();
 		$_term   = $handler->get($term_id);
 		if (!$_term) {
 			return false;

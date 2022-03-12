@@ -1,5 +1,5 @@
 <?php
-namespace Model;
+namespace WP_Core\Model;
 
 /**
  * # Meta Handler
