@@ -1,9 +1,11 @@
 <?php
+/**
+ * index
+ * @since 0.1
+ * @author WP Framework
+ */
 
 require 'config.php';
-// new Action\User\Action_Test;
-// new WP_Test;
-// new Component\Test;
 
 $route = new Controller\Route();
-echo $route->render();
+$route->dispatch();
