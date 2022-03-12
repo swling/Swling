@@ -1,5 +1,5 @@
 <?php
-namespace Utility;
+namespace WP_Core\Utility;
 
 /**
  * 单例模式实例化部分公共代码

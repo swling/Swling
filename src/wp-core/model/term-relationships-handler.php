@@ -3,7 +3,7 @@ namespace WP_Core\Model;
 
 use Exception;
 use WP_Core\Model\WPDB_Handler_Term;
-use Utility\Singleton_Trait;
+use WP_Core\Utility\Singleton_Trait;
 
 /**
  * @see wpdb->term_relationships

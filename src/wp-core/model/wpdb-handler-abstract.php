@@ -2,7 +2,7 @@
 namespace WP_Core\Model;
 
 use Exception;
-use Utility\Singleton_Trait;
+use WP_Core\Utility\Singleton_Trait;
 
 /**
  * # 单行数据表操作抽象基类
