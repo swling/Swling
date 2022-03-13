@@ -14,6 +14,7 @@ namespace WP_Core\Model;
  * meta 统一按 $object_id_column 缓存获取"组数据”，不单独按字段名缓存“行数据”
  * 故此设置 $this->object_cache_fields = [];
  * 即：meta 不沿用 WPDB_Handler_Abstract 缓存机制
+ * 与 WordPress 不同，本框架同一 object id 不支持多个重名 meta key
  */
 class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 

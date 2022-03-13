@@ -114,3 +114,130 @@ function delete_metadata(string $meta_type, int $object_id, string $meta_key) {
 	$handler = get_meta_handler($meta_type);
 	return $handler->delete_meta($object_id, $meta_key);
 }
+
+//
+// Post meta functions.
+//
+
+/**
+ * Adds a meta field to the given post.
+ *
+ * Post meta data is called "Custom Fields" on the Administration Screen.
+ *
+ * @since 1.5.0
+ *
+ * @param int    $post_id    Post ID.
+ * @param string $meta_key   Metadata name.
+ * @param mixed  $meta_value Metadata value. Must be serializable if non-scalar.
+ * @return int   Meta ID on success, 0 on failure.
+ */
+function add_post_meta(int $post_id, string $meta_key, mixed $meta_value): int {
+	return add_metadata('post', $post_id, $meta_key, $meta_value);
+}
+
+/**
+ * Deletes a post meta field for the given post ID.
+ *
+ * You can match based on the key, or key and value. Removing based on key and
+ * value, will keep from removing duplicate metadata with the same key. It also
+ * allows removing all metadata matching the key, if needed.
+ *
+ * @since 1.5.0
+ *
+ * @param int    $post_id    Post ID.
+ * @param string $meta_key   Metadata name.
+ * @return int   The meta ID on success, 0 on failure.
+ */
+function delete_post_meta(int $post_id, string $meta_key): int {
+	return delete_metadata('post', $post_id, $meta_key);
+}
+
+/**
+ * Retrieves a post meta field for the given post ID.
+ *
+ * @since 1.5.0
+ *
+ * @param int    $post_id Post ID.
+ * @param string $key     Optional. The meta key to retrieve. By default,
+ *                        returns data for all keys. Default empty.
+ * @return mixed          The value of the meta field.
+ */
+function get_post_meta(int $post_id, string $meta_key): mixed {
+	return get_metadata('post', $post_id, $meta_key);
+}
+
+/**
+ * Updates a post meta field based on the given post ID.
+ *
+ * Use the `$prev_value` parameter to differentiate between meta fields with the
+ * same key and post ID.
+ *
+ * If the meta field for the post does not exist, it will be added and its ID returned.
+ *
+ * Can be used in place of add_post_meta().
+ *
+ * @since 1.5.0
+ *
+ * @param int    $post_id    Post ID.
+ * @param string $meta_key   Metadata key.
+ * @param mixed  $meta_value Metadata value. Must be serializable if non-scalar.
+ * @return int               The meta ID on success, 0 on failure.
+ */
+function update_post_meta(int $post_id, string $meta_key, mixed $meta_value): int {
+	return update_metadata('post', $post_id, $meta_key, $meta_value);
+}
+
+//
+// User meta functions.
+//
+
+/**
+ * Adds meta data to a user.
+ *
+ * @param int    $user_id    User ID.
+ * @param string $meta_key   Metadata name.
+ * @param mixed  $meta_value Metadata value. Must be serializable if non-scalar.
+ * @return int   Meta ID on success, 0 on failure.
+ */
+function add_user_meta(int $user_id, string $meta_key, mixed $meta_value): int {
+	return add_metadata('user', $user_id, $meta_key, $meta_value);
+}
+
+/**
+ * Remove metadata matching criteria from a user.
+ *
+ * @param int    $user_id    User ID
+ * @param string $meta_key   Metadata name.
+ * @return int   Meta ID on success, 0 on failure.
+ */
+function delete_user_meta(int $user_id, string $meta_key): int {
+	return delete_metadata('user', $user_id, $meta_key);
+}
+
+/**
+ * Retrieve user meta field for a user.
+ *
+ * @param int    $user_id User ID.
+ * @param string $key     The meta key to retrieve.
+ * @return mixed          The value of the meta field.
+ */
+function get_user_meta(int $user_id, string $meta_key): mixed {
+	return get_metadata('user', $user_id, $meta_key);
+}
+
+/**
+ * Update user meta field based on user ID.
+ *
+ * Use the $prev_value parameter to differentiate between meta fields with the
+ * same key and user ID.
+ *
+ * If the meta field for the user does not exist, it will be added.
+ *
+ * @param int    $user_id    User ID.
+ * @param string $meta_key   Metadata key.
+ * @param mixed  $meta_value Metadata value. Must be serializable if non-scalar.
+ * @return int   Meta ID on success, 0 on failure.
+ */
+function update_user_meta(int $user_id, string $meta_key, mixed $meta_value): int {
+	return update_metadata('user', $user_id, $meta_key, $meta_value);
+}
