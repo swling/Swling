@@ -41,8 +41,24 @@ function get_meta_handler(string $meta_type): object{
  * @return int The meta ID on success, 0 on failure.
  */
 function add_metadata(string $meta_type, int $object_id, string $meta_key, $meta_value) {
-	$handler = get_meta_handler($meta_type);
+	$handler    = get_meta_handler($meta_type);
+	$meta_value = maybe_serialize($meta_value);
 	return $handler->add_meta($object_id, $meta_key, $meta_value);
+}
+
+/**
+ * Retrieves the raw data of a metadata  for the specified object type and ID.
+ *
+ * @param string $meta_type Type of object metadata is for. Accepts 'post', 'comment', 'term', 'user',
+ *                          or any other object type with an associated meta table.
+ * @param int    $object_id ID of the object metadata is for.
+ * @param string $meta_key  Optional. Metadata key. If not specified, retrieve all metadata for
+ *                          the specified object. Default empty.
+ * @return object|false     The object of the meta
+ */
+function get_meta_object(string $meta_type, int $object_id, string $meta_key) {
+	$handler = get_meta_handler($meta_type);
+	return $handler->get_meta($object_id, $meta_key);
 }
 
 /**
@@ -55,9 +71,10 @@ function add_metadata(string $meta_type, int $object_id, string $meta_key, $meta
  *                          the specified object. Default empty.
  * @return mixed  The value of the meta field
  */
-function get_metadata(string $meta_type, int $object_id, string $meta_key) {
-	$handler = get_meta_handler($meta_type);
-	return $handler->get_meta($object_id, $meta_key);
+function get_metadata(string $meta_type, int $object_id, string $meta_key): mixed{
+	$meta_object = get_meta_object($meta_type, $object_id, $meta_key);
+	$data        = $meta_object->meta_value ?? false;
+	return $data ? maybe_unserialize($data) : false;
 }
 
 /**
@@ -72,7 +89,8 @@ function get_metadata(string $meta_type, int $object_id, string $meta_key) {
  * @return int The new meta field ID if a field with the given key didn't exist 0 on failure
  */
 function update_metadata(string $meta_type, int $object_id, string $meta_key, $meta_value) {
-	$handler = get_meta_handler($meta_type);
+	$handler    = get_meta_handler($meta_type);
+	$meta_value = maybe_serialize($meta_value);
 	return $handler->update_meta($object_id, $meta_key, $meta_value);
 }
 
