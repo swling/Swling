@@ -1,8 +1,6 @@
 <?php
 namespace Controller;
 
-use Controller\Dispatcher_API;
-
 /**
  * ## API 路由
  * - Api 部分参考 wnd-frontend 插件，仅支持 POST 及 GET 请求

@@ -12,7 +12,7 @@ rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 ### Apache 伪静态
 ```
 RewriteEngine On
-RewriteBase /swling
+RewriteBase /
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]

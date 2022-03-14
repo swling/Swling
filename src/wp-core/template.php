@@ -296,3 +296,25 @@ function load_template($_template_file, $require_once = true, $args = []) {
 		require $_template_file;
 	}
 }
+
+/**
+ * Fire the wp_head action.
+ *
+ */
+function wp_head() {
+	/**
+	 * Prints scripts or data in the head tag on the front end.
+	 */
+	do_action('wp_head');
+}
+
+/**
+ * Fire the wp_footer action.
+ *
+ */
+function wp_footer() {
+	/**
+	 * Prints scripts or data before the closing body tag on the front end.
+	 */
+	do_action('wp_footer');
+}

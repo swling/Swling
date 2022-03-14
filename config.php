@@ -13,6 +13,7 @@ define('WP_CONTENT_DIR', 'content');
 
 // Template
 define('TEMPLATEPATH', ABSPATH . 'content/themes/test');
+// define('TEMPLATEPATH', ABSPATH . 'content/themes/default');
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
 define('DB_NAME', 'sanks_wndwp');
