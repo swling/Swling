@@ -21,6 +21,7 @@ require ABSPATH . WPINC . '/term.php';
 
 require ABSPATH . WPINC . '/template.php';
 require ABSPATH . WPINC . '/script.php';
+require ABSPATH . WPINC . '/styles.php';
 
 // 计时
 timer_start();

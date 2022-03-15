@@ -1,5 +1,6 @@
 <?php
 // WP Head
+add_action('wp_head', 'wp_print_styles', 8);
 add_action('wp_head', 'print_head_scripts', 8);
 
 // WP Footer
