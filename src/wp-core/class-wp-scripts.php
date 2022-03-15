@@ -1,5 +1,7 @@
 <?php
 
+use WP_Core\Utility\Singleton_Trait;
+
 /**
  * Core class used to register scripts.
  *
@@ -16,6 +18,12 @@ class WP_Scripts extends WP_Dependencies {
 	public $default_version;
 
 	public $type_attr = " type='text/javascript'";
+
+	/**
+	 * Singleton model
+	 * use ::get_instance() to instance
+	 */
+	use Singleton_Trait;
 
 	/**
 	 * Processes a dependency.

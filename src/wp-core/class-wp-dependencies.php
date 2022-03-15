@@ -1,7 +1,4 @@
 <?php
-
-use WP_Core\Utility\Singleton_Trait;
-
 /**
  * Core base class extended to register items.
  *
@@ -36,12 +33,6 @@ class WP_Dependencies {
 	 * @var array
 	 */
 	public $done = [];
-
-	/**
-	 * Singleton model
-	 * use ::get_instance() to instance
-	 */
-	use Singleton_Trait;
 
 	/**
 	 * Register an item.
