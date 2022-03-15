@@ -204,6 +204,44 @@ function wp_dequeue_script($handle) {
 }
 
 /**
+ * Adds extra code to a registered script.
+ *
+ * Code will only be added if the script is already in the queue.
+ * Accepts a string $data containing the Code. If two or more code blocks
+ * are added to the same script $handle, they will be printed in the order
+ * they were added, i.e. the latter added code can redeclare the previous.
+ *
+ * @since 4.5.0
+ *
+ * @see WP_Scripts::add_inline_script()
+ *
+ * @param string $handle   Name of the script to add the inline script to.
+ * @param string $data     String containing the JavaScript to be added.
+ * @param string $position Optional. Whether to add the inline script before the handle
+ *                         or after. Default 'after'.
+ * @return bool True on success, false on failure.
+ */
+function wp_add_inline_script($handle, $data, $position = 'after') {
+	_wp_scripts_maybe_doing_it_wrong(__FUNCTION__, $handle);
+
+	if (false !== stripos($data, '</script>')) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			sprintf(
+				/* translators: 1: <script>, 2: wp_add_inline_script() */
+				__('Do not pass %1$s tags to %2$s.'),
+				'<code>&lt;script&gt;</code>',
+				'<code>wp_add_inline_script()</code>'
+			),
+			'4.5.0'
+		);
+		$data = trim(preg_replace('#<script[^>]*>(.*)</script>#is', '$1', $data));
+	}
+
+	return wp_scripts()->add_inline_script($handle, $data, $position);
+}
+
+/**
  * Prints the script queue in the HTML head on admin pages.
  *
  * Postpones the scripts that were queued for the footer.
