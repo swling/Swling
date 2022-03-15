@@ -432,3 +432,199 @@ function wp_parse_str($string, &$array) {
 function absint($maybeint) {
 	return abs((int) $maybeint);
 }
+
+/**
+ * Build URL query based on an associative and, or indexed array.
+ *
+ * This is a convenient function for easily building url queries. It sets the
+ * separator to '&' and uses _http_build_query() function.
+ *
+ * @since 2.3.0
+ *
+ * @see _http_build_query() Used to build the query
+ * @link https://www.php.net/manual/en/function.http-build-query.php for more on what
+ *       http_build_query() does.
+ *
+ * @param array $data URL-encode key/value pairs.
+ * @return string URL-encoded string.
+ */
+function build_query($data) {
+	return _http_build_query($data, null, '&', '', false);
+}
+
+/**
+ * From php.net (modified by Mark Jaquith to behave like the native PHP5 function).
+ *
+ * @since 3.2.0
+ * @access private
+ *
+ * @see https://www.php.net/manual/en/function.http-build-query.php
+ *
+ * @param array|object $data      An array or object of data. Converted to array.
+ * @param string       $prefix    Optional. Numeric index. If set, start parameter numbering with it.
+ *                                Default null.
+ * @param string       $sep       Optional. Argument separator; defaults to 'arg_separator.output'.
+ *                                Default null.
+ * @param string       $key       Optional. Used to prefix key name. Default empty.
+ * @param bool         $urlencode Optional. Whether to use urlencode() in the result. Default true.
+ * @return string The query string.
+ */
+function _http_build_query($data, $prefix = null, $sep = null, $key = '', $urlencode = true) {
+	$ret = [];
+
+	foreach ((array) $data as $k => $v) {
+		if ($urlencode) {
+			$k = urlencode($k);
+		}
+		if (is_int($k) && null != $prefix) {
+			$k = $prefix . $k;
+		}
+		if (!empty($key)) {
+			$k = $key . '%5B' . $k . '%5D';
+		}
+		if (null === $v) {
+			continue;
+		} elseif (false === $v) {
+			$v = '0';
+		}
+
+		if (is_array($v) || is_object($v)) {
+			array_push($ret, _http_build_query($v, '', $sep, $k, $urlencode));
+		} elseif ($urlencode) {
+			array_push($ret, $k . '=' . urlencode($v));
+		} else {
+			array_push($ret, $k . '=' . $v);
+		}
+	}
+
+	if (null === $sep) {
+		$sep = ini_get('arg_separator.output');
+	}
+
+	return implode($sep, $ret);
+}
+
+/**
+ * Retrieves a modified URL query string.
+ *
+ * You can rebuild the URL and append query variables to the URL query by using this function.
+ * There are two ways to use this function; either a single key and value, or an associative array.
+ *
+ * Using a single key and value:
+ *
+ *     add_query_arg( 'key', 'value', 'http://example.com' );
+ *
+ * Using an associative array:
+ *
+ *     add_query_arg( array(
+ *         'key1' => 'value1',
+ *         'key2' => 'value2',
+ *     ), 'http://example.com' );
+ *
+ * Omitting the URL from either use results in the current URL being used
+ * (the value of `$_SERVER['REQUEST_URI']`).
+ *
+ * Values are expected to be encoded appropriately with urlencode() or rawurlencode().
+ *
+ * Setting any query variable's value to boolean false removes the key (see remove_query_arg()).
+ *
+ * Important: The return value of add_query_arg() is not escaped by default. Output should be
+ * late-escaped with esc_url() or similar to help prevent vulnerability to cross-site scripting
+ * (XSS) attacks.
+ *
+ * @since 1.5.0
+ * @since 5.3.0 Formalized the existing and already documented parameters
+ *              by adding `...$args` to the function signature.
+ *
+ * @param string|array $key   Either a query variable key, or an associative array of query variables.
+ * @param string       $value Optional. Either a query variable value, or a URL to act upon.
+ * @param string       $url   Optional. A URL to act upon.
+ * @return string New URL query string (unescaped).
+ */
+function add_query_arg(...$args) {
+	if (is_array($args[0])) {
+		if (count($args) < 2 || false === $args[1]) {
+			$uri = $_SERVER['REQUEST_URI'];
+		} else {
+			$uri = $args[1];
+		}
+	} else {
+		if (count($args) < 3 || false === $args[2]) {
+			$uri = $_SERVER['REQUEST_URI'];
+		} else {
+			$uri = $args[2];
+		}
+	}
+
+	$frag = strstr($uri, '#');
+	if ($frag) {
+		$uri = substr($uri, 0, -strlen($frag));
+	} else {
+		$frag = '';
+	}
+
+	if (0 === stripos($uri, 'http://')) {
+		$protocol = 'http://';
+		$uri      = substr($uri, 7);
+	} elseif (0 === stripos($uri, 'https://')) {
+		$protocol = 'https://';
+		$uri      = substr($uri, 8);
+	} else {
+		$protocol = '';
+	}
+
+	if (strpos($uri, '?') !== false) {
+		list($base, $query) = explode('?', $uri, 2);
+		$base .= '?';
+	} elseif ($protocol || strpos($uri, '=') === false) {
+		$base  = $uri . '?';
+		$query = '';
+	} else {
+		$base  = '';
+		$query = $uri;
+	}
+
+	wp_parse_str($query, $qs);
+	$qs = urlencode_deep($qs); // This re-URL-encodes things that were already in the query string.
+	if (is_array($args[0])) {
+		foreach ($args[0] as $k => $v) {
+			$qs[$k] = $v;
+		}
+	} else {
+		$qs[$args[0]] = $args[1];
+	}
+
+	foreach ($qs as $k => $v) {
+		if (false === $v) {
+			unset($qs[$k]);
+		}
+	}
+
+	$ret = build_query($qs);
+	$ret = trim($ret, '?');
+	$ret = preg_replace('#=(&|$)#', '$1', $ret);
+	$ret = $protocol . $base . $ret . $frag;
+	$ret = rtrim($ret, '?');
+	$ret = str_replace('?#', '#', $ret);
+	return $ret;
+}
+
+/**
+ * Removes an item or items from a query string.
+ *
+ * @since 1.5.0
+ *
+ * @param string|string[] $key   Query key or keys to remove.
+ * @param false|string    $query Optional. When false uses the current URL. Default false.
+ * @return string New URL query string.
+ */
+function remove_query_arg($key, $query = false) {
+	if (is_array($key)) {
+		// Removing multiple keys.
+		foreach ($key as $k) {
+			$query = add_query_arg($k, false, $query);
+		}
+		return $query;
+	}
+	return add_query_arg($key, false, $query);
+}
