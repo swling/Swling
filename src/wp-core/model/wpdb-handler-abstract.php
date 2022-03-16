@@ -101,7 +101,7 @@ abstract class WPDB_Handler_Abstract {
 			$conditions = "`$field` = " . "'{$value}'";
 		}
 
-		$sql  = "SELECT * FROM `$this->table` WHERE $conditions";
+		$sql  = "SELECT * FROM `$this->table` WHERE $conditions LIMIT 1";
 		$data = $this->wpdb->get_row($sql);
 
 		// get data success
@@ -174,7 +174,7 @@ abstract class WPDB_Handler_Abstract {
 
 		foreach ($this->required_columns as $column) {
 			if (!isset($data[$column]) or !$data[$column]) {
-				throw new Exception('Required columns are empty');
+				throw new Exception('Required columns are empty : ' . $column);
 			}
 		}
 

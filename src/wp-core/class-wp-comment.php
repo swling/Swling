@@ -72,7 +72,7 @@ final class WP_Comment {
 	 * @since 4.4.0
 	 * @var string
 	 */
-	public $comment_date = '0000-00-00 00:00:00';
+	public $comment_date = '1970-01-01 08:00:00';
 
 	/**
 	 * Comment GMT date in YYYY-MM-DD HH::MM:SS format.
@@ -80,7 +80,7 @@ final class WP_Comment {
 	 * @since 4.4.0
 	 * @var string
 	 */
-	public $comment_date_gmt = '0000-00-00 00:00:00';
+	public $comment_date_gmt = '1970-01-01 08:00:00';
 
 	/**
 	 * Comment content.
@@ -180,23 +180,11 @@ final class WP_Comment {
 	 * @return WP_Comment|false Comment object, otherwise false.
 	 */
 	public static function get_instance( $id ) {
-		global $wpdb;
+		$handler = WP_Core\Model\WPDB_Handler_Comment::get_instance();
+		$_comment    = $handler->get($id);
 
-		$comment_id = (int) $id;
-		if ( ! $comment_id ) {
-			return false;
-		}
-
-		$_comment = wp_cache_get( $comment_id, 'comment' );
-
-		if ( ! $_comment ) {
-			$_comment = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->comments WHERE comment_ID = %d LIMIT 1", $comment_id ) );
-
-			if ( ! $_comment ) {
-				return false;
-			}
-
-			wp_cache_add( $_comment->comment_ID, $_comment, 'comment' );
+		if (!$_comment) {
+			return $_comment;
 		}
 
 		return new WP_Comment( $_comment );
