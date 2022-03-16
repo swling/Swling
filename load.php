@@ -18,6 +18,7 @@ require ABSPATH . WPINC . '/meta.php';
 require ABSPATH . WPINC . '/taxonomy.php';
 require ABSPATH . WPINC . '/post.php';
 require ABSPATH . WPINC . '/term.php';
+require ABSPATH . WPINC . '/comment.php';
 
 require ABSPATH . WPINC . '/template.php';
 require ABSPATH . WPINC . '/script.php';

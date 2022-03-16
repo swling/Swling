@@ -172,6 +172,169 @@ function wp_parse_id_list($list) {
 }
 
 /**
+ * Extract a slice of an array, given a list of keys.
+ *
+ * @since 3.1.0
+ *
+ * @param array $array The original array.
+ * @param array $keys  The list of keys.
+ * @return array The array slice.
+ */
+function wp_array_slice_assoc($array, $keys) {
+	$slice = [];
+
+	foreach ($keys as $key) {
+		if (isset($array[$key])) {
+			$slice[$key] = $array[$key];
+		}
+	}
+
+	return $slice;
+}
+
+/**
+ * Return a comma-separated string of functions that have been called to get
+ * to the current point in code.
+ *
+ * @since 3.4.0
+ *
+ * @see https://core.trac.wordpress.org/ticket/19589
+ *
+ * @param string $ignore_class Optional. A class to ignore all function calls within - useful
+ *                             when you want to just give info about the callee. Default null.
+ * @param int    $skip_frames  Optional. A number of stack frames to skip - useful for unwinding
+ *                             back to the source of the issue. Default 0.
+ * @param bool   $pretty       Optional. Whether or not you want a comma separated string or raw
+ *                             array returned. Default true.
+ * @return string|array Either a string containing a reversed comma separated trace or an array
+ *                      of individual calls.
+ */
+function wp_debug_backtrace_summary($ignore_class = null, $skip_frames = 0, $pretty = true) {
+	static $truncate_paths;
+
+	$trace       = debug_backtrace(false);
+	$caller      = [];
+	$check_class = !is_null($ignore_class);
+	$skip_frames++; // Skip this function.
+
+	if (!isset($truncate_paths)) {
+		$truncate_paths = [
+			wp_normalize_path(WP_CONTENT_DIR),
+			wp_normalize_path(ABSPATH),
+		];
+	}
+
+	foreach ($trace as $call) {
+		if ($skip_frames > 0) {
+			$skip_frames--;
+		} elseif (isset($call['class'])) {
+			if ($check_class && $ignore_class == $call['class']) {
+				continue; // Filter out calls.
+			}
+
+			$caller[] = "{$call['class']}{$call['type']}{$call['function']}";
+		} else {
+			if (in_array($call['function'], ['do_action', 'apply_filters', 'do_action_ref_array', 'apply_filters_ref_array'], true)) {
+				$caller[] = "{$call['function']}('{$call['args'][0]}')";
+			} elseif (in_array($call['function'], ['include', 'include_once', 'require', 'require_once'], true)) {
+				$filename = isset($call['args'][0]) ? $call['args'][0] : '';
+				$caller[] = $call['function'] . "('" . str_replace($truncate_paths, '', wp_normalize_path($filename)) . "')";
+			} else {
+				$caller[] = $call['function'];
+			}
+		}
+	}
+	if ($pretty) {
+		return implode(', ', array_reverse($caller));
+	} else {
+		return $caller;
+	}
+}
+
+/**
+ * Normalize a filesystem path.
+ *
+ * On windows systems, replaces backslashes with forward slashes
+ * and forces upper-case drive letters.
+ * Allows for two leading slashes for Windows network shares, but
+ * ensures that all other duplicate slashes are reduced to a single.
+ *
+ * @since 3.9.0
+ * @since 4.4.0 Ensures upper-case drive letters on Windows systems.
+ * @since 4.5.0 Allows for Windows network shares.
+ * @since 4.9.7 Allows for PHP file wrappers.
+ *
+ * @param string $path Path to normalize.
+ * @return string Normalized path.
+ */
+function wp_normalize_path($path) {
+	$wrapper = '';
+
+	if (wp_is_stream($path)) {
+		list($wrapper, $path) = explode('://', $path, 2);
+
+		$wrapper .= '://';
+	}
+
+	// Standardise all paths to use '/'.
+	$path = str_replace('\\', '/', $path);
+
+	// Replace multiple slashes down to a singular, allowing for network shares having two slashes.
+	$path = preg_replace('|(?<=.)/+|', '/', $path);
+
+	// Windows paths should uppercase the drive letter.
+	if (':' === substr($path, 1, 1)) {
+		$path = ucfirst($path);
+	}
+
+	return $wrapper . $path;
+}
+
+/**
+ * Test if a given path is a stream URL
+ *
+ * @since 3.5.0
+ *
+ * @param string $path The resource path or URL.
+ * @return bool True if the path is a stream URL.
+ */
+function wp_is_stream($path) {
+	$scheme_separator = strpos($path, '://');
+
+	if (false === $scheme_separator) {
+		// $path isn't a stream.
+		return false;
+	}
+
+	$stream = substr($path, 0, $scheme_separator);
+
+	return in_array($stream, stream_get_wrappers(), true);
+}
+
+/**
+ * Retrieve IDs that are not already present in the cache.
+ *
+ * @since 3.4.0
+ * @access private
+ *
+ * @param int[]  $object_ids Array of IDs.
+ * @param string $cache_key  The cache bucket to check against.
+ * @return int[] Array of IDs not present in the cache.
+ */
+function _get_non_cached_ids($object_ids, $cache_key) {
+	$non_cached_ids = [];
+	$cache_values   = wp_cache_get_multiple($object_ids, $cache_key);
+
+	foreach ($cache_values as $id => $value) {
+		if (!$value) {
+			$non_cached_ids[] = (int) $id;
+		}
+	}
+
+	return $non_cached_ids;
+}
+
+/**
  * Filters a list of objects, based on a set of key => value arguments.
  *
  * Retrieves the objects from the list that match the given arguments.

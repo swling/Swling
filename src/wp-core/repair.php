@@ -5,8 +5,6 @@
  */
 function wp_load_translations_early() {}
 
-function wp_debug_backtrace_summary() {}
-
 function is_multisite() {
 	return false;
 }
