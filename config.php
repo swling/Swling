@@ -2,18 +2,15 @@
 
 ini_set('display_errors', 'On');
 
-// 定义插件文件路径
-define('ABSPATH', __DIR__ . DIRECTORY_SEPARATOR);
+// ######################################### 站点配置
 
-// 安装目录
-define('DIR_NAME', basename(__DIR__));
+// site url
+define('WP_SITEURL', 'http://' . $_SERVER['HTTP_HOST']);
 
-define('WPINC', 'src/wp-core');
-define('WP_CONTENT_DIR', 'content');
+// current theme
+define('TEMPLATE_DIR', 'default');
 
-// Template
-define('TEMPLATEPATH', ABSPATH . 'content/themes/test');
-// define('TEMPLATEPATH', ABSPATH . 'content/themes/default');
+// ######################################### 数据库配置
 
 // ** MySQL 设置 - 具体信息来自您正在使用的主机 ** //
 define('DB_NAME', 'sanks_wndwp');
@@ -36,11 +33,19 @@ $table_prefix = 'wp_';
  */
 define('DB_COLLATE', '');
 
-// Debug
+// ######################################### Debug 配置
 define('WP_DEBUG', true);
 define('WP_DEBUG_DISPLAY', null);
 // define('WP_DEBUG_LOG', true);
 define('SAVEQUERIES', true);
 
-// 加载
+// ######################################### 以下信息如无特殊需求，请勿修改
+// 定义插件文件路径
+define('ABSPATH', __DIR__ . DIRECTORY_SEPARATOR);
+
+// 安装目录
+define('DIR_NAME', basename(__DIR__));
+
+define('WPINC', 'src/wp-core');
+
 require ABSPATH . 'load.php';

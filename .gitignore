@@ -1,4 +1,5 @@
 *.zip
 *.log
 /.*/
-/content/
+/content/themes/*
+!/content/themes/default/

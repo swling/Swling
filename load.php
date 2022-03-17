@@ -9,6 +9,7 @@ require ABSPATH . WPINC . '/repair.php';
 require ABSPATH . WPINC . '/functions.php';
 require ABSPATH . WPINC . '/class-wpdb.php';
 require ABSPATH . WPINC . '/plugin.php';
+require ABSPATH . WPINC . '/theme.php';
 require ABSPATH . WPINC . '/default-hook.php';
 require ABSPATH . WPINC . '/query.php';
 
@@ -23,6 +24,7 @@ require ABSPATH . WPINC . '/comment.php';
 require ABSPATH . WPINC . '/template.php';
 require ABSPATH . WPINC . '/script.php';
 require ABSPATH . WPINC . '/styles.php';
+require ABSPATH . WPINC . '/link-template.php';
 
 // 计时
 timer_start();
@@ -47,3 +49,8 @@ create_initial_taxonomies();
 
 // Post Type
 create_initial_post_types();
+
+// current theme functions.php
+if (file_exists(TEMPLATEPATH . '/functions.php')) {
+	require TEMPLATEPATH . '/functions.php';
+}

@@ -1,5 +1,20 @@
 <?php
 
+// content
+define('WP_CONTENT_DIR', 'content');
+define('WP_CONTENT_URL', WP_SITEURL . '/' . WP_CONTENT_DIR);
+
+// plugin
+define('WP_PLUGIN_DIR', WP_CONTENT_DIR . '/extends'); // Full path, no trailing slash.
+define('WP_PLUGIN_URL', WP_CONTENT_URL . '/extends'); // Full URL, no trailing slash.
+
+// theme
+define('WP_THEME_DIR', WP_CONTENT_DIR . '/themes'); // Full URL, no trailing slash.
+define('WP_THEME_URL', WP_CONTENT_URL . '/themes'); // Full URL, no trailing slash.
+
+// current theme
+define('TEMPLATEPATH', ABSPATH . WP_THEME_DIR . '/' . TEMPLATE_DIR);
+
 /**
  * Constants for expressing human-readable data sizes in their respective number of bytes.
  *
