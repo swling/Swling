@@ -757,6 +757,7 @@ class WP_Query {
 
 		return $elements;
 	}
+	
 	/**
 	 * After looping through a nested query, this function
 	 * restores the $post global to the current post in this query.
@@ -830,4 +831,333 @@ class WP_Query {
 			$this->max_num_pages = ceil($this->found_posts / $q['posts_per_page']);
 		}
 	}
+
+	/**
+	 * Is the query for the blog homepage?
+	 *
+	 * This is the page which shows the time based blog content of your site.
+	 *
+	 * Depends on the site's "Front page displays" Reading Settings 'show_on_front' and 'page_for_posts'.
+	 *
+	 * If you set a static page for the front page of your site, this function will return
+	 * true only on the page you set as the "Posts page".
+	 *
+	 * @since 3.1.0
+	 *
+	 * @see WP_Query::is_front_page()
+	 *
+	 * @return bool Whether the query is for the blog homepage.
+	 */
+	public function is_home() {
+		return (bool) $this->is_home;
+	}
+
+	/**
+	 * Is the query for an existing custom taxonomy archive page?
+	 *
+	 * If the $taxonomy parameter is specified, this function will additionally
+	 * check if the query is for that specific $taxonomy.
+	 *
+	 * If the $term parameter is specified in addition to the $taxonomy parameter,
+	 * this function will additionally check if the query is for one of the terms
+	 * specified.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @global WP_Taxonomy[] $wp_taxonomies Registered taxonomies.
+	 *
+	 * @param string|string[]           $taxonomy Optional. Taxonomy slug or slugs to check against.
+	 *                                            Default empty.
+	 * @param int|string|int[]|string[] $term     Optional. Term ID, name, slug, or array of such
+	 *                                            to check against. Default empty.
+	 * @return bool Whether the query is for an existing custom taxonomy archive page.
+	 *              True for custom taxonomy archive pages, false for built-in taxonomies
+	 *              (category and tag archives).
+	 */
+	public function is_tax($taxonomy = '', $term = '') {
+		global $wp_taxonomies;
+
+		if (!$this->is_tax) {
+			return false;
+		}
+
+		if (empty($taxonomy)) {
+			return true;
+		}
+
+		$queried_object = $this->get_queried_object();
+		$tax_array      = array_intersect(array_keys($wp_taxonomies), (array) $taxonomy);
+		$term_array     = (array) $term;
+
+		// Check that the taxonomy matches.
+		if (!(isset($queried_object->taxonomy) && count($tax_array) && in_array($queried_object->taxonomy, $tax_array, true))) {
+			return false;
+		}
+
+		// Only a taxonomy provided.
+		if (empty($term)) {
+			return true;
+		}
+
+		return isset($queried_object->term_id) &&
+		count(
+			array_intersect(
+				[$queried_object->term_id, $queried_object->name, $queried_object->slug],
+				$term_array
+			)
+		);
+	}
+
+	/**
+	 * Is the query for an existing archive page?
+	 *
+	 * Archive pages include category, tag, author, date, custom post type,
+	 * and custom taxonomy based archives.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @see WP_Query::is_category()
+	 * @see WP_Query::is_tag()
+	 * @see WP_Query::is_author()
+	 * @see WP_Query::is_date()
+	 * @see WP_Query::is_post_type_archive()
+	 * @see WP_Query::is_tax()
+	 *
+	 * @return bool Whether the query is for an existing archive page.
+	 */
+	public function is_archive() {
+		return (bool) $this->is_archive;
+	}
+
+	/**
+	 * Is the query for an existing post type archive page?
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string|string[] $post_types Optional. Post type or array of posts types
+	 *                                    to check against. Default empty.
+	 * @return bool Whether the query is for an existing post type archive page.
+	 */
+	public function is_post_type_archive($post_types = '') {
+		if (empty($post_types) || !$this->is_post_type_archive) {
+			return (bool) $this->is_post_type_archive;
+		}
+
+		$post_type = $this->get('post_type');
+		if (is_array($post_type)) {
+			$post_type = reset($post_type);
+		}
+		$post_type_object = get_post_type_object($post_type);
+
+		return in_array($post_type_object->name, (array) $post_types, true);
+	}
+
+	/**
+	 * Is the query for an existing author archive page?
+	 *
+	 * If the $author parameter is specified, this function will additionally
+	 * check if the query is for one of the authors specified.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param int|string|int[]|string[] $author Optional. User ID, nickname, nicename, or array of such
+	 *                                          to check against. Default empty.
+	 * @return bool Whether the query is for an existing author archive page.
+	 */
+	public function is_author($author = '') {
+		if (!$this->is_author) {
+			return false;
+		}
+
+		if (empty($author)) {
+			return true;
+		}
+
+		$author_obj = $this->get_queried_object();
+
+		$author = array_map('strval', (array) $author);
+
+		if (in_array((string) $author_obj->ID, $author, true)) {
+			return true;
+		} elseif (in_array($author_obj->nickname, $author, true)) {
+			return true;
+		} elseif (in_array($author_obj->user_nicename, $author, true)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Is the query for an existing single page?
+	 *
+	 * If the $page parameter is specified, this function will additionally
+	 * check if the query is for one of the pages specified.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @see WP_Query::is_single()
+	 * @see WP_Query::is_singular()
+	 *
+	 * @param int|string|int[]|string[] $page Optional. Page ID, title, slug, path, or array of such
+	 *                                        to check against. Default empty.
+	 * @return bool Whether the query is for an existing single page.
+	 */
+	public function is_page($page = '') {
+		if (!$this->is_page) {
+			return false;
+		}
+
+		if (empty($page)) {
+			return true;
+		}
+
+		$page_obj = $this->get_queried_object();
+
+		$page = array_map('strval', (array) $page);
+
+		if (in_array((string) $page_obj->ID, $page, true)) {
+			return true;
+		} elseif (in_array($page_obj->post_title, $page, true)) {
+			return true;
+		} elseif (in_array($page_obj->post_name, $page, true)) {
+			return true;
+		} else {
+			foreach ($page as $pagepath) {
+				if (!strpos($pagepath, '/')) {
+					continue;
+				}
+				$pagepath_obj = get_page_by_path($pagepath);
+
+				if ($pagepath_obj && ($pagepath_obj->ID == $page_obj->ID)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Is the query for a paged result and not for the first page?
+	 *
+	 * @since 3.1.0
+	 *
+	 * @return bool Whether the query is for a paged result.
+	 */
+	public function is_paged() {
+		return (bool) $this->is_paged;
+	}
+
+	/**
+	 * Is the query for a post or page preview?
+	 *
+	 * @since 3.1.0
+	 *
+	 * @return bool Whether the query is for a post or page preview.
+	 */
+	public function is_preview() {
+		return (bool) $this->is_preview;
+	}
+
+	/**
+	 * Is the query for a search?
+	 *
+	 * @since 3.1.0
+	 *
+	 * @return bool Whether the query is for a search.
+	 */
+	public function is_search() {
+		return (bool) $this->is_search;
+	}
+
+	/**
+	 * Is the query for an existing single post?
+	 *
+	 * Works for any post type excluding pages.
+	 *
+	 * If the $post parameter is specified, this function will additionally
+	 * check if the query is for one of the Posts specified.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @see WP_Query::is_page()
+	 * @see WP_Query::is_singular()
+	 *
+	 * @param int|string|int[]|string[] $post Optional. Post ID, title, slug, path, or array of such
+	 *                                        to check against. Default empty.
+	 * @return bool Whether the query is for an existing single post.
+	 */
+	public function is_single($post = '') {
+		if (!$this->is_single) {
+			return false;
+		}
+
+		if (empty($post)) {
+			return true;
+		}
+
+		$post_obj = $this->get_queried_object();
+
+		$post = array_map('strval', (array) $post);
+
+		if (in_array((string) $post_obj->ID, $post, true)) {
+			return true;
+		} elseif (in_array($post_obj->post_title, $post, true)) {
+			return true;
+		} elseif (in_array($post_obj->post_name, $post, true)) {
+			return true;
+		} else {
+			foreach ($post as $postpath) {
+				if (!strpos($postpath, '/')) {
+					continue;
+				}
+				$postpath_obj = get_page_by_path($postpath, OBJECT, $post_obj->post_type);
+
+				if ($postpath_obj && ($postpath_obj->ID == $post_obj->ID)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Is the query for an existing single post of any post type (post, attachment, page,
+	 * custom post types)?
+	 *
+	 * If the $post_types parameter is specified, this function will additionally
+	 * check if the query is for one of the Posts Types specified.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @see WP_Query::is_page()
+	 * @see WP_Query::is_single()
+	 *
+	 * @param string|string[] $post_types Optional. Post type or array of post types
+	 *                                    to check against. Default empty.
+	 * @return bool Whether the query is for an existing single post
+	 *              or any of the given post types.
+	 */
+	public function is_singular($post_types = '') {
+		if (empty($post_types) || !$this->is_singular) {
+			return (bool) $this->is_singular;
+		}
+
+		$post_obj = $this->get_queried_object();
+
+		return in_array($post_obj->post_type, (array) $post_types, true);
+	}
+
+	/**
+	 * Is the query a 404 (returns no results)?
+	 *
+	 * @since 3.1.0
+	 *
+	 * @return bool Whether the query is a 404 error.
+	 */
+	public function is_404() {
+		return (bool) $this->is_404;
+	}
+
 }

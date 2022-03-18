@@ -691,3 +691,100 @@ function wp_delete_post(int $post_id, bool $force_delete = false): int{
 	$handler = WP_Core\Model\WPDB_Handler_Post::get_instance();
 	return $handler->delete($post->ID);
 }
+
+/**
+ * Retrieves a page given its path.
+ *
+ * @since 2.1.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @param string       $page_path Page path.
+ * @param string       $output    Optional. The required return type. One of OBJECT, ARRAY_A, or ARRAY_N, which
+ *                                correspond to a WP_Post object, an associative array, or a numeric array,
+ *                                respectively. Default OBJECT.
+ * @param string|array $post_type Optional. Post type or array of post types. Default 'page'.
+ * @return WP_Post|array|null WP_Post (or array) on success, or null on failure.
+ */
+function get_page_by_path($page_path, $output = OBJECT, $post_type = 'page') {
+	global $wpdb;
+
+	$last_changed = wp_cache_get_last_changed('posts');
+
+	$hash      = md5($page_path . serialize($post_type));
+	$cache_key = "get_page_by_path:$hash:$last_changed";
+	$cached    = wp_cache_get($cache_key, 'posts');
+	if (false !== $cached) {
+		// Special case: '0' is a bad `$page_path`.
+		if ('0' === $cached || 0 === $cached) {
+			return;
+		} else {
+			return get_post($cached, $output);
+		}
+	}
+
+	$page_path     = rawurlencode(urldecode($page_path));
+	$page_path     = str_replace('%2F', '/', $page_path);
+	$page_path     = str_replace('%20', ' ', $page_path);
+	$parts         = explode('/', trim($page_path, '/'));
+	$parts         = array_map('sanitize_title_for_query', $parts);
+	$escaped_parts = esc_sql($parts);
+
+	$in_string = "'" . implode("','", $escaped_parts) . "'";
+
+	if (is_array($post_type)) {
+		$post_types = $post_type;
+	} else {
+		$post_types = [$post_type, 'attachment'];
+	}
+
+	$post_types          = esc_sql($post_types);
+	$post_type_in_string = "'" . implode("','", $post_types) . "'";
+	$sql                 = "
+		SELECT ID, post_name, post_parent, post_type
+		FROM $wpdb->posts
+		WHERE post_name IN ($in_string)
+		AND post_type IN ($post_type_in_string)
+	";
+
+	$pages = $wpdb->get_results($sql, OBJECT_K);
+
+	$revparts = array_reverse($parts);
+
+	$foundid = 0;
+	foreach ((array) $pages as $page) {
+		if ($page->post_name == $revparts[0]) {
+			$count = 0;
+			$p     = $page;
+
+			/**
+			 * Loop through the given path parts from right to left,
+			 * ensuring each matches the post ancestry.
+			 */
+			while (0 != $p->post_parent && isset($pages[$p->post_parent])) {
+				$count++;
+				$parent = $pages[$p->post_parent];
+				if (!isset($revparts[$count]) || $parent->post_name != $revparts[$count]) {
+					break;
+				}
+				$p = $parent;
+			}
+
+			if (0 == $p->post_parent && count($revparts) == $count + 1 && $p->post_name == $revparts[$count]) {
+				$foundid = $page->ID;
+				if ($page->post_type == $post_type) {
+					break;
+				}
+			}
+		}
+	}
+
+	// We cache misses as well as hits.
+	wp_cache_set($cache_key, $foundid, 'posts');
+
+	if ($foundid) {
+		return get_post($foundid, $output);
+	}
+
+	return null;
+}

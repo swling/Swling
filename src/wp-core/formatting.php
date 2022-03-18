@@ -31,6 +31,20 @@ function sanitize_key($key) {
 }
 
 /**
+ * Sanitizes a title with the 'query' context.
+ *
+ * Used for querying the database for a value from URL.
+ *
+ * @since 3.1.0
+ *
+ * @param string $title The string to be sanitized.
+ * @return string The sanitized string.
+ */
+function sanitize_title_for_query($title) {
+	return sanitize_title($title, '', 'query');
+}
+
+/**
  * Adds slashes to a string or recursively adds slashes to strings within an array.
  *
  * This should be used when preparing data for core API that expects slashed data.
