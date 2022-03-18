@@ -2,6 +2,7 @@
 namespace WP_Core\Model;
 
 use Exception;
+use WP_Core\Utility\Singleton_Trait;
 
 /**
  *
@@ -13,6 +14,8 @@ class WPDB_Handler_Post extends WPDB_Handler_Abstract {
 	protected $primary_id_column   = 'ID';
 	protected $required_columns    = ['post_type', 'post_title', 'post_name'];
 	protected $object_cache_fields = ['ID', 'post_name'];
+
+	use Singleton_Trait;
 
 	protected function check_insert_data(array $data) {}
 

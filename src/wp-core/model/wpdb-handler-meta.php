@@ -1,6 +1,8 @@
 <?php
 namespace WP_Core\Model;
 
+use WP_Core\Utility\Singleton_Trait;
+
 /**
  * # Meta Handler
  *
@@ -25,6 +27,8 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 	protected $object_cache_fields = [];
 
 	private $object_id_column;
+
+	use Singleton_Trait;
 
 	protected function check_insert_data(array $data) {}
 

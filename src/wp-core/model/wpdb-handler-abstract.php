@@ -2,7 +2,6 @@
 namespace WP_Core\Model;
 
 use Exception;
-use WP_Core\Utility\Singleton_Trait;
 
 /**
  * # 单行数据表操作抽象基类
@@ -26,14 +25,16 @@ abstract class WPDB_Handler_Abstract {
 	protected $wpdb;
 	protected $table;
 
-	use Singleton_Trait;
-
 	/**
 	 * Constructer
 	 *
 	 * Init
+	 *
+	 * 定义为 protected 旨在方便子类继承构造函数并设置为单例模式
+	 * 不可直接在父类中设置单例特性，因为继承自同一父类的静态属性 $instance 将同步影响所有其他子类
+	 * @link https://wndwp.com/archives/819
 	 */
-	private function __construct() {
+	protected function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
 

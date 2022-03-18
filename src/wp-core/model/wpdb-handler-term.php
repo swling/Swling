@@ -2,6 +2,7 @@
 namespace WP_Core\Model;
 
 use Exception;
+use WP_Core\Utility\Singleton_Trait;
 
 /**
  * @see Wwpdb->terms
@@ -14,6 +15,8 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 	protected $primary_id_column   = 'term_id';
 	protected $required_columns    = ['name', 'slug', 'taxonomy'];
 	protected $object_cache_fields = ['term_id'];
+
+	use Singleton_Trait;
 
 	protected function check_insert_data(array $data) {
 		// Term common check
