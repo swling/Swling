@@ -7,7 +7,7 @@ use Exception;
  * # 单行数据表操作抽象基类
  * - 本类“增删改”操作仅针对单行，默认仅支持单行单字段查询。多行及多条件复合查询，需在子类中根据所在表应用场景补充添加
  * - 在 wpdb 的基础上统一添加 Hook
- * - meta、term_relationships 读取与其他表紧密关联，因此不适用于本类，对应为独立类 @see Meta_Handler(); @see Term_Relationships_Handler();
+ * - term_relationships 读取与其他表紧密关联，因此不适用于本类，对应为独立类 @see Term_Relationships_Handler();
  *
  * ### return
  * - Get : data（object） or false
