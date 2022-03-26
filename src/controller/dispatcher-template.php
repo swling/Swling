@@ -39,6 +39,7 @@ class Dispatcher_Template {
 		global $wp_query;
 		if ($this->wp_query_args or $this->is_home) {
 			$wp_query = new WP_Query($this->wp_query_args);
+			$wp_query->query();
 		}
 
 		// 复制备份（在修改主查询后，可通过此备份必要时还原）

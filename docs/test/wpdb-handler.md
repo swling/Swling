@@ -44,7 +44,7 @@ $args = [
 	'tax_query'      => [
 		[
 			'taxonomy' => 'category',
-			'field'    => 'id',
+			'field'    => 'term_id',
 			'terms'    => '355',
 		],
 	],
@@ -64,7 +64,7 @@ $args = [
 ];
 
 $query = new WP_Query($args);
-$posts = $query->get_posts();
+$posts = $query->query();
 echo $query->request . '<br/>';
 echo '<br/>';
 
