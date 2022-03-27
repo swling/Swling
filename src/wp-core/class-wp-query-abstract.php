@@ -2,6 +2,17 @@
 /**
  * Query API: WP_Query class
  *
+ * general query var:
+ * - 'number'
+ * - 'offset'
+ * - 'search'
+ * - 'paged'
+ * - 'orderby'
+ * - 'order'
+ * - 'tax_query'
+ * - 'meta_query'
+ * - 'date_query'
+ *
  */
 abstract class WP_Query_Abstract {
 
@@ -11,7 +22,10 @@ abstract class WP_Query_Abstract {
 	protected $table_name        = '';
 	protected $primary_id_column = '';
 	protected $meta_type         = '';
+	protected $str_column        = [];
 	protected $int_column        = [];
+	protected $search_column     = [];
+	protected $default_order_by  = '';
 
 	/**
 	 * Query vars set by the user.
@@ -187,6 +201,13 @@ abstract class WP_Query_Abstract {
 		// Calculate SQL query statement
 		$this->calculate_sql();
 
+		// Get Cache
+		$cache = $this->get_query_cache();
+		if (false !== $cache) {
+			$this->results = $cache;
+			return $this->results;
+		}
+
 		// excute sql query
 		$this->results = $this->wpdb->get_results($this->request);
 		if ($this->results) {
@@ -196,6 +217,9 @@ abstract class WP_Query_Abstract {
 
 		// prevent duplicate queries
 		$this->executed = true;
+
+		// Set Cache
+		$this->set_query_cache();
 
 		return $this->results;
 	}
@@ -233,6 +257,14 @@ abstract class WP_Query_Abstract {
 		// Handle complex date queries.
 		$this->parse_date_query();
 
+		// Other relationships query. Used to expand the query, default is empty.
+		$this->parse_relationship_query();
+
+		// Search
+		if ('' !== ($q['search'])) {
+			$this->parse_search_query($q['search']);
+		}
+
 		// If 'offset' is provided, it takes precedence over 'paged'.
 		$this->parse_limits();
 
@@ -252,8 +284,6 @@ abstract class WP_Query_Abstract {
 	/**
 	 * Set up the amount of found results and the number of pages (if limit clause was used)
 	 * for the current query.
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
 	 * @param array  $q      Query variables.
 	 * @param string $limits LIMIT clauses of the query.
@@ -339,7 +369,11 @@ abstract class WP_Query_Abstract {
 	}
 
 	protected function parse_tax_query() {
-		$q               = &$this->query_vars;
+		$q = &$this->query_vars;
+		if (!isset($q['tax_query'])) {
+			return;
+		}
+
 		$this->tax_query = new WP_Tax_Query($q['tax_query']);
 		$clauses         = $this->tax_query->get_sql($this->table, $this->primary_id_column);
 		$this->join .= $clauses['join'];
@@ -351,7 +385,7 @@ abstract class WP_Query_Abstract {
 		$this->meta_query = new WP_Meta_Query();
 		$this->meta_query->parse_query_vars($q);
 		if (!empty($this->meta_query->queries)) {
-			$clauses = $this->meta_query->get_sql('post', $this->table, $this->primary_id_column, $this);
+			$clauses = $this->meta_query->get_sql($this->meta_type, $this->table, $this->primary_id_column, $this);
 			$this->join .= $clauses['join'];
 			$this->where .= $clauses['where'];
 		}
@@ -365,33 +399,136 @@ abstract class WP_Query_Abstract {
 		}
 	}
 
+	/**
+	 * Other relationships query. Used to expand the query, default is empty.
+	 * When needed, define in subclasses.
+	 */
+	protected function parse_relationship_query() {}
+
+	/**
+	 * Used internally to generate a SQL string related to the 'search' parameter.
+	 *
+	 * @param string $string
+	 */
+	protected function parse_search_query(string $string) {
+		$like = "'%{$this->wpdb->esc_like($string)}%'";
+
+		$conditions = ' AND (';
+		for ($i = 0, $j = count($this->search_column); $i < $j; $i++) {
+			if (0 == $i) {
+				$conditions .= "({$this->search_column[$i]} LIKE {$like})";
+				// $conditions .= $this->wpdb->prepare("({$this->search_column[$i]} LIKE %s)", $like);
+			} else {
+				$conditions .= " OR ({$this->search_column[$i]} LIKE {$like})";
+				// $conditions .= $this->wpdb->prepare(" OR ({$this->search_column[$i]} LIKE %s)", $like);
+			}
+		}
+		$conditions .= ')';
+
+		$this->where .= $conditions;
+	}
+
 	protected function parse_orderby() {
-		$wpdb = &$this->wpdb;
-		$q    = &$this->query_vars;
-		if (empty($q['orderby'])) {
-			$this->orderby = "{$this->table}.post_date " . $q['order'];
-		} elseif (!empty($q['order'])) {
-			// $orderby = "{$q['orderby']} {$q['order']}";
+		$q            = &$this->query_vars;
+		$q['orderby'] = $q['orderby'] ?: $this->default_order_by;
+		if (!$q['orderby'] or 'none' == $q['orderby']) {
+			return;
 		}
 
-		if (!empty($this->orderby)) {
-			$this->orderby = 'ORDER BY ' . $this->orderby;
+		$_orderby = strtolower($q['orderby']);
+		if ($_orderby == 'meta_value' or $_orderby == 'meta_value_num') {
+			$_orderby = $this->parse_orderby_meta($_orderby);
 		}
+
+		$order = $this->parse_order($q['order']);
+		if (!empty($order)) {
+			$orderby = "{$_orderby} {$order}";
+		}
+
+		if (!empty($orderby)) {
+			$this->orderby = 'ORDER BY ' . $orderby;
+		}
+	}
+
+	/**
+	 * Generate the ORDER BY clause for an 'orderby' param that is potentially related to a meta query.
+	 *
+	 * @param string $orderby_raw Raw 'orderby' value passed to WP_Term_Query.
+	 * @return string ORDER BY clause.
+	 */
+	protected function parse_orderby_meta($orderby_raw) {
+		$orderby = '';
+
+		// Tell the meta query to generate its SQL, so we have access to table aliases.
+		$this->meta_query->get_sql($this->meta_type, $this->table, $this->primary_id_column);
+		$meta_clauses = $this->meta_query->get_clauses();
+		if (!$meta_clauses || !$orderby_raw) {
+			return $orderby;
+		}
+
+		$allowed_keys       = [];
+		$primary_meta_key   = null;
+		$primary_meta_query = reset($meta_clauses);
+		if (!empty($primary_meta_query['key'])) {
+			$primary_meta_key = $primary_meta_query['key'];
+			$allowed_keys[]   = $primary_meta_key;
+		}
+		$allowed_keys[] = 'meta_value';
+		$allowed_keys[] = 'meta_value_num';
+		$allowed_keys   = array_merge($allowed_keys, array_keys($meta_clauses));
+
+		if (!in_array($orderby_raw, $allowed_keys, true)) {
+			return $orderby;
+		}
+
+		switch ($orderby_raw) {
+			case $primary_meta_key:
+			case 'meta_value':
+				if (!empty($primary_meta_query['type'])) {
+					$orderby = "CAST({$primary_meta_query['alias']}.meta_value AS {$primary_meta_query['cast']})";
+				} else {
+					$orderby = "{$primary_meta_query['alias']}.meta_value";
+				}
+				break;
+
+			case 'meta_value_num':
+				$orderby = "{$primary_meta_query['alias']}.meta_value+0";
+				break;
+
+			default:
+				if (array_key_exists($orderby_raw, $meta_clauses)) {
+					// $orderby corresponds to a meta_query clause.
+					$meta_clause = $meta_clauses[$orderby_raw];
+					$orderby     = "CAST({$meta_clause['alias']}.meta_value AS {$meta_clause['cast']})";
+				}
+				break;
+		}
+
+		return $orderby;
 	}
 
 	protected function parse_limits() {
 		$q = &$this->query_vars;
+
+		if (!$q['number']) {
+			return;
+		}
+
 		if (isset($q['offset']) && is_numeric($q['offset'])) {
 			$q['offset'] = absint($q['offset']);
 			$pgstrt      = $q['offset'] . ', ';
 		} else {
-			$pgstrt = absint(($this->page - 1) * $q['number']) . ', ';
+			$page = absint($q['paged'] ?? 0);
+			if (!$page) {
+				$page = 1;
+			}
+			$pgstrt = absint(($page - 1) * $q['number']) . ', ';
 		}
+
 		$this->limits = 'LIMIT ' . $pgstrt . $q['number'];
 	}
 
 	protected function parse_groupby() {
-		$wpdb = &$this->wpdb;
 		if (!empty($this->tax_query->queries) || !empty($this->meta_query->queries)) {
 			$this->groupby = "{$this->table}.$this->primary_id_column";
 		}
@@ -399,6 +536,48 @@ abstract class WP_Query_Abstract {
 		if (!empty($this->groupby)) {
 			$this->groupby = 'GROUP BY ' . $this->groupby;
 		}
+	}
+
+	/**
+	 * Parse an 'order' query variable and cast it to ASC or DESC as necessary.
+	 *
+	 * @since 4.6.0
+	 *
+	 * @param string $order The 'order' query variable.
+	 * @return string The sanitized 'order' query variable.
+	 */
+	protected function parse_order($order) {
+		if (!is_string($order) || empty($order)) {
+			return 'DESC';
+		}
+
+		if ('ASC' === strtoupper($order)) {
+			return 'ASC';
+		} else {
+			return 'DESC';
+		}
+	}
+
+	protected function set_query_cache() {
+		$cache_key = $this->build_cache_key();
+		wp_cache_set($cache_key, $this->results, $this->table_name, DAY_IN_SECONDS);
+	}
+
+	protected function get_query_cache() {
+		$cache_key = $this->build_cache_key();
+		return wp_cache_get($cache_key, $this->table_name);
+	}
+
+	/**
+	 * last_changed 策略尚未完成
+	 */
+	protected function build_cache_key(): string{
+		// $args can be anything. Only use the args defined in defaults to compute the key.
+		// $key = md5(serialize(wp_array_slice_assoc($args, array_keys($this->query_var_defaults))) . serialize($taxonomies) . $this->request);
+
+		$key          = md5($this->request);
+		$last_changed = wp_cache_get_last_changed($this->table_name);
+		return "get_{$this->table_name}:{$key}:{$last_changed}";
 	}
 
 }

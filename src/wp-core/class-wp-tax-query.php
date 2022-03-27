@@ -629,8 +629,8 @@ class WP_Tax_Query {
 				break;
 		}
 
-		$term_query = new WP_Term_Query();
-		$term_list  = $term_query->query( $args );
+		$term_query = new WP_Term_Query( $args );
+		$term_list  = $term_query->query();
 
 		if ( is_wp_error( $term_list ) ) {
 			$query = $term_list;

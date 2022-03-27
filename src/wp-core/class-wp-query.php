@@ -10,6 +10,8 @@ class WP_Query extends WP_Query_Abstract {
 	protected $meta_type         = 'post';
 	protected $int_column        = ['ID', 'post_author', 'post_parent'];
 	protected $str_column        = ['post_name', 'post_type', 'post_status', 'post_mime_type'];
+	protected $search_column     = ['post_title'];
+	protected $default_order_by  = 'post_date';
 
 	/**
 	 * Index of the current item in the loop.
@@ -56,7 +58,12 @@ class WP_Query extends WP_Query_Abstract {
 	 */
 	public $queried_object_id;
 
-	private static $default_query = [
+	/**
+	 * Default values for query vars.
+	 *
+	 * @var array
+	 */
+	protected static $query_var_defaults = [
 		'ID'            => '',
 		'post_name'     => '',
 		'post_parent'   => '',
@@ -67,6 +74,7 @@ class WP_Query extends WP_Query_Abstract {
 		'date_query'    => [],
 		'fields'        => '',
 		'number'        => 10,
+		'search'        => '',
 		'no_found_rows' => false,
 		'orderby'       => '',
 		'order'         => 'DESC',
@@ -100,7 +108,7 @@ class WP_Query extends WP_Query_Abstract {
 		}
 
 		$this->query      = $query;
-		$this->query_vars = array_merge(static::$default_query, $query);
+		$this->query_vars = array_merge(static::$query_var_defaults, $query);
 		$qv               = $this->query_vars;
 
 		if ($qv['tax_query']) {
