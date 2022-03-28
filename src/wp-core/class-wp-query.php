@@ -81,20 +81,6 @@ class WP_Query extends WP_Query_Abstract {
 	];
 
 	/**
-	 * Is the query the main query?
-	 *
-	 * @since 3.3.0
-	 *
-	 * @global WP_Query $wp_query WordPress Query object.
-	 *
-	 * @return bool Whether the query is the main query.
-	 */
-	public function is_main_query() {
-		global $wp_query;
-		return $wp_query === $this;
-	}
-
-	/**
 	 * Parse a query string and set query type booleans.
 	 */
 	public function parse_query(array $query) {
@@ -177,6 +163,10 @@ class WP_Query extends WP_Query_Abstract {
 		}
 
 		return $this->results;
+	}
+
+	protected static function instantiate_item(object $item): object {
+		return new WP_Post($item);
 	}
 
 	/**
@@ -488,6 +478,20 @@ class WP_Query extends WP_Query_Abstract {
 			$GLOBALS['post'] = $this->post;
 			$this->setup_postdata($this->post);
 		}
+	}
+
+	/**
+	 * Is the query the main query?
+	 *
+	 * @since 3.3.0
+	 *
+	 * @global WP_Query $wp_query WordPress Query object.
+	 *
+	 * @return bool Whether the query is the main query.
+	 */
+	public function is_main_query() {
+		global $wp_query;
+		return $wp_query === $this;
 	}
 
 	/**

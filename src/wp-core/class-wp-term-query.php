@@ -245,30 +245,8 @@ class WP_Term_Query extends WP_Query_Abstract {
 		$this->where .= " AND tr.object_id IN ($ids)";
 	}
 
-	/**
-	 * Creates an array of term objects from an array of term IDs.
-	 *
-	 * Also discards invalid term objects.
-	 *
-	 * @since 4.9.8
-	 *
-	 * @param array $term_ids Term IDs.
-	 * @return array
-	 */
-	protected function populate_terms($term_ids) {
-		$terms = [];
-
-		if (!is_array($term_ids)) {
-			return $terms;
-		}
-
-		foreach ($term_ids as $key => $term_id) {
-			$term = get_term($term_id);
-			if ($term instanceof WP_Term) {
-				$terms[$key] = $term;
-			}
-		}
-
-		return $terms;
+	protected static function instantiate_item(object $item): object {
+		return new WP_Term($item);
 	}
+
 }

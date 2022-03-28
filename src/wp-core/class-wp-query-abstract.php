@@ -6,6 +6,7 @@
  * - 'number'
  * - 'offset'
  * - 'search'
+ * - 'fields'
  * - 'paged'
  * - 'orderby'
  * - 'order'
@@ -204,14 +205,15 @@ abstract class WP_Query_Abstract {
 		// Get Cache
 		$cache = $this->get_query_cache();
 		if (false !== $cache) {
-			$this->results = $cache;
+			$this->results = $this->maybe_instantiate_results($cache);
 			return $this->results;
 		}
 
 		// excute sql query
-		$this->results = $this->wpdb->get_results($this->request);
-		if ($this->results) {
-			$this->result_count = count($this->results);
+		$results = $this->wpdb->get_results($this->request);
+		if ($results) {
+			$this->results      = $this->maybe_instantiate_results($results);
+			$this->result_count = count($results);
 			$this->set_found_results($this->query_vars, $this->limits);
 		}
 
@@ -556,6 +558,24 @@ abstract class WP_Query_Abstract {
 		} else {
 			return 'DESC';
 		}
+	}
+
+	/**
+	 * maybe instantiate the results item to WP object
+	 */
+	protected function maybe_instantiate_results(array $results): array{
+		if (!$this->query_vars['fields'] or 'all' == $this->query_vars['fields']) {
+			$results = array_map([$this, 'instantiate_item'], $results);
+		}
+
+		return $results;
+	}
+
+	/**
+	 * instantiate the results item to WP object
+	 */
+	protected static function instantiate_item(object $item): object {
+		return $item;
 	}
 
 	protected function set_query_cache() {
