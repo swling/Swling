@@ -18,6 +18,7 @@ class WP_User_Query extends WP_Query_Abstract {
 
 	protected $table_name        = 'users';
 	protected $primary_id_column = 'ID';
+	protected $date_column       = 'user_registered';
 	protected $meta_type         = 'user';
 	protected $int_column        = ['ID', 'user_status'];
 	protected $str_column        = ['user_login', 'user_pass', 'user_nicename', 'user_email', 'user_url', 'user_activation_key', 'display_name'];

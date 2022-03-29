@@ -7,6 +7,7 @@ class WP_Query extends WP_Query_Abstract {
 
 	protected $table_name        = 'posts';
 	protected $primary_id_column = 'ID';
+	protected $date_column       = 'post_date';
 	protected $meta_type         = 'post';
 	protected $int_column        = ['ID', 'post_author', 'post_parent'];
 	protected $str_column        = ['post_name', 'post_type', 'post_status', 'post_mime_type'];

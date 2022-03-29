@@ -22,6 +22,7 @@ abstract class WP_Query_Abstract {
 	protected $table             = '';
 	protected $table_name        = '';
 	protected $primary_id_column = '';
+	protected $date_column       = '';
 	protected $meta_type         = '';
 	protected $str_column        = [];
 	protected $int_column        = [];
@@ -104,7 +105,7 @@ abstract class WP_Query_Abstract {
 	protected $fields     = '';
 	protected $found_rows = '';
 	protected $distinct   = '';
-	protected $where      = '';
+	protected $where      = '1=1';
 	protected $limits     = '';
 	protected $join       = '';
 	protected $search     = '';
@@ -280,7 +281,7 @@ abstract class WP_Query_Abstract {
 			$this->found_rows = 'SQL_CALC_FOUND_ROWS';
 		}
 
-		$this->request = "SELECT {$this->found_rows} {$this->distinct} {$this->fields} FROM {$this->table} {$this->join} WHERE 1=1 {$this->where} {$this->groupby} {$this->orderby} {$this->limits}";
+		$this->request = "SELECT {$this->found_rows} {$this->distinct} {$this->fields} FROM {$this->table} {$this->join} WHERE {$this->where} {$this->groupby} {$this->orderby} {$this->limits}";
 	}
 
 	/**
@@ -395,8 +396,8 @@ abstract class WP_Query_Abstract {
 
 	protected function parse_date_query() {
 		$q = &$this->query_vars;
-		if (!empty($q['date_query'])) {
-			$this->date_query = new WP_Date_Query($q['date_query']);
+		if (!empty($q['date_query']) and $this->date_column) {
+			$this->date_query = new WP_Date_Query($q['date_query'], $this->date_column);
 			$this->where .= $this->date_query->get_sql();
 		}
 	}
