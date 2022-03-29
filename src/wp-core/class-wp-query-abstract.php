@@ -408,26 +408,41 @@ abstract class WP_Query_Abstract {
 	protected function parse_relationship_query() {}
 
 	/**
-	 * Used internally to generate a SQL string related to the 'search' parameter.
+	 * Used internally to generate an SQL string for searching across multiple columns
 	 *
 	 * @param string $string
 	 */
 	protected function parse_search_query(string $string) {
-		$like = "'%{$this->wpdb->esc_like($string)}%'";
+		global $wpdb;
 
-		$conditions = ' AND (';
-		for ($i = 0, $j = count($this->search_column); $i < $j; $i++) {
-			if (0 == $i) {
-				$conditions .= "({$this->search_column[$i]} LIKE {$like})";
-				// $conditions .= $this->wpdb->prepare("({$this->search_column[$i]} LIKE %s)", $like);
-			} else {
-				$conditions .= " OR ({$this->search_column[$i]} LIKE {$like})";
-				// $conditions .= $this->wpdb->prepare(" OR ({$this->search_column[$i]} LIKE %s)", $like);
-			}
+		$like = '%' . $wpdb->esc_like($string) . '%';
+
+		$searches = [];
+		foreach ($this->search_column as $col) {
+			$searches[] = $wpdb->prepare("$col LIKE %s", $like);
 		}
-		$conditions .= ')';
 
-		$this->where .= $conditions;
+		$this->where .= ' AND (' . implode(' OR ', $searches) . ')';
+	}
+
+	/**
+	 * Parse an 'order' query variable and cast it to ASC or DESC as necessary.
+	 *
+	 * @since 4.6.0
+	 *
+	 * @param string $order The 'order' query variable.
+	 * @return string The sanitized 'order' query variable.
+	 */
+	protected function parse_order($order) {
+		if (!is_string($order) || empty($order)) {
+			return 'DESC';
+		}
+
+		if ('ASC' === strtoupper($order)) {
+			return 'ASC';
+		} else {
+			return 'DESC';
+		}
 	}
 
 	protected function parse_orderby() {
@@ -537,26 +552,6 @@ abstract class WP_Query_Abstract {
 
 		if (!empty($this->groupby)) {
 			$this->groupby = 'GROUP BY ' . $this->groupby;
-		}
-	}
-
-	/**
-	 * Parse an 'order' query variable and cast it to ASC or DESC as necessary.
-	 *
-	 * @since 4.6.0
-	 *
-	 * @param string $order The 'order' query variable.
-	 * @return string The sanitized 'order' query variable.
-	 */
-	protected function parse_order($order) {
-		if (!is_string($order) || empty($order)) {
-			return 'DESC';
-		}
-
-		if ('ASC' === strtoupper($order)) {
-			return 'ASC';
-		} else {
-			return 'DESC';
 		}
 	}
 
