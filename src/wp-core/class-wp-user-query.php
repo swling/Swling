@@ -14,23 +14,15 @@
  *
  * @see WP_User_Query::prepare_query() for information on accepted arguments.
  */
-class WP_User_Query {
+class WP_User_Query extends WP_Query_Abstract {
 
-	/**
-	 * Query vars, after parsing
-	 *
-	 * @since 3.5.0
-	 * @var array
-	 */
-	public $query_vars = array();
-
-	/**
-	 * List of found user IDs.
-	 *
-	 * @since 3.1.0
-	 * @var array
-	 */
-	private $results;
+	protected $table_name        = 'users';
+	protected $primary_id_column = 'ID';
+	protected $meta_type         = 'user';
+	protected $int_column        = ['ID', 'user_status'];
+	protected $str_column        = ['user_login', 'user_pass', 'user_nicename', 'user_email', 'user_url', 'user_activation_key', 'display_name'];
+	protected $search_column     = ['user_login', 'user_email', 'display_name'];
+	protected $default_order_by  = ['ID'];
 
 	/**
 	 * Total number of found users for the current query
@@ -40,44 +32,7 @@ class WP_User_Query {
 	 */
 	private $total_users = 0;
 
-	/**
-	 * Metadata query container.
-	 *
-	 * @since 4.2.0
-	 * @var WP_Meta_Query
-	 */
-	public $meta_query = false;
-
-	/**
-	 * The SQL query used to fetch matching users.
-	 *
-	 * @since 4.4.0
-	 * @var string
-	 */
-	public $request;
-
-	private $compat_fields = array( 'results', 'total_users' );
-
-	// SQL clauses.
-	public $query_fields;
-	public $query_from;
-	public $query_where;
-	public $query_orderby;
-	public $query_limit;
-
-	/**
-	 * PHP5 constructor.
-	 *
-	 * @since 3.1.0
-	 *
-	 * @param null|string|array $query Optional. The query variables.
-	 */
-	public function __construct( $query = null ) {
-		if ( ! empty( $query ) ) {
-			$this->prepare_query( $query );
-			$this->query();
-		}
-	}
+	private $compat_fields = ['results', 'total_users'];
 
 	/**
 	 * Fills in missing query variables with default values.
@@ -87,22 +42,21 @@ class WP_User_Query {
 	 * @param array $args Query vars, as passed to `WP_User_Query`.
 	 * @return array Complete query variables with undefined ones filled in with defaults.
 	 */
-	public static function fill_query_vars( $args ) {
-		$defaults = array(
-			'blog_id'             => get_current_blog_id(),
+	public static function fill_query_vars($args) {
+		$defaults = [
 			'role'                => '',
-			'role__in'            => array(),
-			'role__not_in'        => array(),
+			'role__in'            => [],
+			'role__not_in'        => [],
 			'capability'          => '',
-			'capability__in'      => array(),
-			'capability__not_in'  => array(),
+			'capability__in'      => [],
+			'capability__not_in'  => [],
 			'meta_key'            => '',
 			'meta_value'          => '',
 			'meta_compare'        => '',
-			'include'             => array(),
-			'exclude'             => array(),
+			'include'             => [],
+			'exclude'             => [],
 			'search'              => '',
-			'search_columns'      => array(),
+			'search_columns'      => [],
 			'orderby'             => 'login',
 			'order'               => 'ASC',
 			'offset'              => '',
@@ -113,14 +67,15 @@ class WP_User_Query {
 			'who'                 => '',
 			'has_published_posts' => null,
 			'nicename'            => '',
-			'nicename__in'        => array(),
-			'nicename__not_in'    => array(),
+			'nicename__in'        => [],
+			'nicename__not_in'    => [],
 			'login'               => '',
-			'login__in'           => array(),
-			'login__not_in'       => array(),
-		);
+			'login__in'           => [],
+			'login__not_in'       => [],
+			'no_found_rows'       => true,
+		];
 
-		return wp_parse_args( $args, $defaults );
+		return wp_parse_args($args, $defaults);
 	}
 
 	/**
@@ -250,641 +205,10 @@ class WP_User_Query {
 	 *                                                logins will not be included in results. Default empty array.
 	 * }
 	 */
-	public function prepare_query( $query = array() ) {
-		global $wpdb;
-
-		if ( empty( $this->query_vars ) || ! empty( $query ) ) {
-			$this->query_limit = null;
-			$this->query_vars  = $this->fill_query_vars( $query );
+	public function parse_query(array $query) {
+		if (empty($this->query_vars) || !empty($query)) {
+			$this->query_vars = $this->fill_query_vars($query);
 		}
-
-		/**
-		 * Fires before the WP_User_Query has been parsed.
-		 *
-		 * The passed WP_User_Query object contains the query variables,
-		 * not yet passed into SQL.
-		 *
-		 * @since 4.0.0
-		 *
-		 * @param WP_User_Query $query Current instance of WP_User_Query (passed by reference).
-		 */
-		do_action_ref_array( 'pre_get_users', array( &$this ) );
-
-		// Ensure that query vars are filled after 'pre_get_users'.
-		$qv =& $this->query_vars;
-		$qv = $this->fill_query_vars( $qv );
-
-		if ( is_array( $qv['fields'] ) ) {
-			$qv['fields'] = array_unique( $qv['fields'] );
-
-			$this->query_fields = array();
-			foreach ( $qv['fields'] as $field ) {
-				$field                = 'ID' === $field ? 'ID' : sanitize_key( $field );
-				$this->query_fields[] = "$wpdb->users.$field";
-			}
-			$this->query_fields = implode( ',', $this->query_fields );
-		} elseif ( 'all' === $qv['fields'] ) {
-			$this->query_fields = "$wpdb->users.*";
-		} else {
-			$this->query_fields = "$wpdb->users.ID";
-		}
-
-		if ( isset( $qv['count_total'] ) && $qv['count_total'] ) {
-			$this->query_fields = 'SQL_CALC_FOUND_ROWS ' . $this->query_fields;
-		}
-
-		$this->query_from  = "FROM $wpdb->users";
-		$this->query_where = 'WHERE 1=1';
-
-		// Parse and sanitize 'include', for use by 'orderby' as well as 'include' below.
-		if ( ! empty( $qv['include'] ) ) {
-			$include = wp_parse_id_list( $qv['include'] );
-		} else {
-			$include = false;
-		}
-
-		$blog_id = 0;
-		if ( isset( $qv['blog_id'] ) ) {
-			$blog_id = absint( $qv['blog_id'] );
-		}
-
-		if ( $qv['has_published_posts'] && $blog_id ) {
-			if ( true === $qv['has_published_posts'] ) {
-				$post_types = get_post_types( array( 'public' => true ) );
-			} else {
-				$post_types = (array) $qv['has_published_posts'];
-			}
-
-			foreach ( $post_types as &$post_type ) {
-				$post_type = $wpdb->prepare( '%s', $post_type );
-			}
-
-			$posts_table        = $wpdb->get_blog_prefix( $blog_id ) . 'posts';
-			$this->query_where .= " AND $wpdb->users.ID IN ( SELECT DISTINCT $posts_table.post_author FROM $posts_table WHERE $posts_table.post_status = 'publish' AND $posts_table.post_type IN ( " . implode( ', ', $post_types ) . ' ) )';
-		}
-
-		// nicename
-		if ( '' !== $qv['nicename'] ) {
-			$this->query_where .= $wpdb->prepare( ' AND user_nicename = %s', $qv['nicename'] );
-		}
-
-		if ( ! empty( $qv['nicename__in'] ) ) {
-			$sanitized_nicename__in = array_map( 'esc_sql', $qv['nicename__in'] );
-			$nicename__in           = implode( "','", $sanitized_nicename__in );
-			$this->query_where     .= " AND user_nicename IN ( '$nicename__in' )";
-		}
-
-		if ( ! empty( $qv['nicename__not_in'] ) ) {
-			$sanitized_nicename__not_in = array_map( 'esc_sql', $qv['nicename__not_in'] );
-			$nicename__not_in           = implode( "','", $sanitized_nicename__not_in );
-			$this->query_where         .= " AND user_nicename NOT IN ( '$nicename__not_in' )";
-		}
-
-		// login
-		if ( '' !== $qv['login'] ) {
-			$this->query_where .= $wpdb->prepare( ' AND user_login = %s', $qv['login'] );
-		}
-
-		if ( ! empty( $qv['login__in'] ) ) {
-			$sanitized_login__in = array_map( 'esc_sql', $qv['login__in'] );
-			$login__in           = implode( "','", $sanitized_login__in );
-			$this->query_where  .= " AND user_login IN ( '$login__in' )";
-		}
-
-		if ( ! empty( $qv['login__not_in'] ) ) {
-			$sanitized_login__not_in = array_map( 'esc_sql', $qv['login__not_in'] );
-			$login__not_in           = implode( "','", $sanitized_login__not_in );
-			$this->query_where      .= " AND user_login NOT IN ( '$login__not_in' )";
-		}
-
-		// Meta query.
-		$this->meta_query = new WP_Meta_Query();
-		$this->meta_query->parse_query_vars( $qv );
-
-		if ( isset( $qv['who'] ) && 'authors' === $qv['who'] && $blog_id ) {
-			_deprecated_argument(
-				'WP_User_Query',
-				'5.9.0',
-				sprintf(
-					/* translators: 1: who, 2: capability */
-					__( '%1$s is deprecated. Use %2$s instead.' ),
-					'<code>who</code>',
-					'<code>capability</code>'
-				)
-			);
-
-			$who_query = array(
-				'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'user_level',
-				'value'   => 0,
-				'compare' => '!=',
-			);
-
-			// Prevent extra meta query.
-			$qv['blog_id'] = 0;
-			$blog_id       = 0;
-
-			if ( empty( $this->meta_query->queries ) ) {
-				$this->meta_query->queries = array( $who_query );
-			} else {
-				// Append the cap query to the original queries and reparse the query.
-				$this->meta_query->queries = array(
-					'relation' => 'AND',
-					array( $this->meta_query->queries, $who_query ),
-				);
-			}
-
-			$this->meta_query->parse_query_vars( $this->meta_query->queries );
-		}
-
-		// Roles.
-		$roles = array();
-		if ( isset( $qv['role'] ) ) {
-			if ( is_array( $qv['role'] ) ) {
-				$roles = $qv['role'];
-			} elseif ( is_string( $qv['role'] ) && ! empty( $qv['role'] ) ) {
-				$roles = array_map( 'trim', explode( ',', $qv['role'] ) );
-			}
-		}
-
-		$role__in = array();
-		if ( isset( $qv['role__in'] ) ) {
-			$role__in = (array) $qv['role__in'];
-		}
-
-		$role__not_in = array();
-		if ( isset( $qv['role__not_in'] ) ) {
-			$role__not_in = (array) $qv['role__not_in'];
-		}
-
-		// Capabilities.
-		$available_roles = array();
-
-		if ( ! empty( $qv['capability'] ) || ! empty( $qv['capability__in'] ) || ! empty( $qv['capability__not_in'] ) ) {
-			global $wp_roles;
-
-			$wp_roles->for_site( $blog_id );
-			$available_roles = $wp_roles->roles;
-		}
-
-		$capabilities = array();
-		if ( ! empty( $qv['capability'] ) ) {
-			if ( is_array( $qv['capability'] ) ) {
-				$capabilities = $qv['capability'];
-			} elseif ( is_string( $qv['capability'] ) ) {
-				$capabilities = array_map( 'trim', explode( ',', $qv['capability'] ) );
-			}
-		}
-
-		$capability__in = array();
-		if ( ! empty( $qv['capability__in'] ) ) {
-			$capability__in = (array) $qv['capability__in'];
-		}
-
-		$capability__not_in = array();
-		if ( ! empty( $qv['capability__not_in'] ) ) {
-			$capability__not_in = (array) $qv['capability__not_in'];
-		}
-
-		// Keep track of all capabilities and the roles they're added on.
-		$caps_with_roles = array();
-
-		foreach ( $available_roles as $role => $role_data ) {
-			$role_caps = array_keys( array_filter( $role_data['capabilities'] ) );
-
-			foreach ( $capabilities as $cap ) {
-				if ( in_array( $cap, $role_caps, true ) ) {
-					$caps_with_roles[ $cap ][] = $role;
-					break;
-				}
-			}
-
-			foreach ( $capability__in as $cap ) {
-				if ( in_array( $cap, $role_caps, true ) ) {
-					$role__in[] = $role;
-					break;
-				}
-			}
-
-			foreach ( $capability__not_in as $cap ) {
-				if ( in_array( $cap, $role_caps, true ) ) {
-					$role__not_in[] = $role;
-					break;
-				}
-			}
-		}
-
-		$role__in     = array_merge( $role__in, $capability__in );
-		$role__not_in = array_merge( $role__not_in, $capability__not_in );
-
-		$roles        = array_unique( $roles );
-		$role__in     = array_unique( $role__in );
-		$role__not_in = array_unique( $role__not_in );
-
-		// Support querying by capabilities added directly to users.
-		if ( $blog_id && ! empty( $capabilities ) ) {
-			$capabilities_clauses = array( 'relation' => 'AND' );
-
-			foreach ( $capabilities as $cap ) {
-				$clause = array( 'relation' => 'OR' );
-
-				$clause[] = array(
-					'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'capabilities',
-					'value'   => '"' . $cap . '"',
-					'compare' => 'LIKE',
-				);
-
-				if ( ! empty( $caps_with_roles[ $cap ] ) ) {
-					foreach ( $caps_with_roles[ $cap ] as $role ) {
-						$clause[] = array(
-							'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'capabilities',
-							'value'   => '"' . $role . '"',
-							'compare' => 'LIKE',
-						);
-					}
-				}
-
-				$capabilities_clauses[] = $clause;
-			}
-
-			$role_queries[] = $capabilities_clauses;
-
-			if ( empty( $this->meta_query->queries ) ) {
-				$this->meta_query->queries[] = $capabilities_clauses;
-			} else {
-				// Append the cap query to the original queries and reparse the query.
-				$this->meta_query->queries = array(
-					'relation' => 'AND',
-					array( $this->meta_query->queries, array( $capabilities_clauses ) ),
-				);
-			}
-
-			$this->meta_query->parse_query_vars( $this->meta_query->queries );
-		}
-
-		if ( $blog_id && ( ! empty( $roles ) || ! empty( $role__in ) || ! empty( $role__not_in ) || is_multisite() ) ) {
-			$role_queries = array();
-
-			$roles_clauses = array( 'relation' => 'AND' );
-			if ( ! empty( $roles ) ) {
-				foreach ( $roles as $role ) {
-					$roles_clauses[] = array(
-						'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'capabilities',
-						'value'   => '"' . $role . '"',
-						'compare' => 'LIKE',
-					);
-				}
-
-				$role_queries[] = $roles_clauses;
-			}
-
-			$role__in_clauses = array( 'relation' => 'OR' );
-			if ( ! empty( $role__in ) ) {
-				foreach ( $role__in as $role ) {
-					$role__in_clauses[] = array(
-						'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'capabilities',
-						'value'   => '"' . $role . '"',
-						'compare' => 'LIKE',
-					);
-				}
-
-				$role_queries[] = $role__in_clauses;
-			}
-
-			$role__not_in_clauses = array( 'relation' => 'AND' );
-			if ( ! empty( $role__not_in ) ) {
-				foreach ( $role__not_in as $role ) {
-					$role__not_in_clauses[] = array(
-						'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'capabilities',
-						'value'   => '"' . $role . '"',
-						'compare' => 'NOT LIKE',
-					);
-				}
-
-				$role_queries[] = $role__not_in_clauses;
-			}
-
-			// If there are no specific roles named, make sure the user is a member of the site.
-			if ( empty( $role_queries ) ) {
-				$role_queries[] = array(
-					'key'     => $wpdb->get_blog_prefix( $blog_id ) . 'capabilities',
-					'compare' => 'EXISTS',
-				);
-			}
-
-			// Specify that role queries should be joined with AND.
-			$role_queries['relation'] = 'AND';
-
-			if ( empty( $this->meta_query->queries ) ) {
-				$this->meta_query->queries = $role_queries;
-			} else {
-				// Append the cap query to the original queries and reparse the query.
-				$this->meta_query->queries = array(
-					'relation' => 'AND',
-					array( $this->meta_query->queries, $role_queries ),
-				);
-			}
-
-			$this->meta_query->parse_query_vars( $this->meta_query->queries );
-		}
-
-		if ( ! empty( $this->meta_query->queries ) ) {
-			$clauses            = $this->meta_query->get_sql( 'user', $wpdb->users, 'ID', $this );
-			$this->query_from  .= $clauses['join'];
-			$this->query_where .= $clauses['where'];
-
-			if ( $this->meta_query->has_or_relation() ) {
-				$this->query_fields = 'DISTINCT ' . $this->query_fields;
-			}
-		}
-
-		// Sorting.
-		$qv['order'] = isset( $qv['order'] ) ? strtoupper( $qv['order'] ) : '';
-		$order       = $this->parse_order( $qv['order'] );
-
-		if ( empty( $qv['orderby'] ) ) {
-			// Default order is by 'user_login'.
-			$ordersby = array( 'user_login' => $order );
-		} elseif ( is_array( $qv['orderby'] ) ) {
-			$ordersby = $qv['orderby'];
-		} else {
-			// 'orderby' values may be a comma- or space-separated list.
-			$ordersby = preg_split( '/[,\s]+/', $qv['orderby'] );
-		}
-
-		$orderby_array = array();
-		foreach ( $ordersby as $_key => $_value ) {
-			if ( ! $_value ) {
-				continue;
-			}
-
-			if ( is_int( $_key ) ) {
-				// Integer key means this is a flat array of 'orderby' fields.
-				$_orderby = $_value;
-				$_order   = $order;
-			} else {
-				// Non-integer key means this the key is the field and the value is ASC/DESC.
-				$_orderby = $_key;
-				$_order   = $_value;
-			}
-
-			$parsed = $this->parse_orderby( $_orderby );
-
-			if ( ! $parsed ) {
-				continue;
-			}
-
-			if ( 'nicename__in' === $_orderby || 'login__in' === $_orderby ) {
-				$orderby_array[] = $parsed;
-			} else {
-				$orderby_array[] = $parsed . ' ' . $this->parse_order( $_order );
-			}
-		}
-
-		// If no valid clauses were found, order by user_login.
-		if ( empty( $orderby_array ) ) {
-			$orderby_array[] = "user_login $order";
-		}
-
-		$this->query_orderby = 'ORDER BY ' . implode( ', ', $orderby_array );
-
-		// Limit.
-		if ( isset( $qv['number'] ) && $qv['number'] > 0 ) {
-			if ( $qv['offset'] ) {
-				$this->query_limit = $wpdb->prepare( 'LIMIT %d, %d', $qv['offset'], $qv['number'] );
-			} else {
-				$this->query_limit = $wpdb->prepare( 'LIMIT %d, %d', $qv['number'] * ( $qv['paged'] - 1 ), $qv['number'] );
-			}
-		}
-
-		$search = '';
-		if ( isset( $qv['search'] ) ) {
-			$search = trim( $qv['search'] );
-		}
-
-		if ( $search ) {
-			$leading_wild  = ( ltrim( $search, '*' ) != $search );
-			$trailing_wild = ( rtrim( $search, '*' ) != $search );
-			if ( $leading_wild && $trailing_wild ) {
-				$wild = 'both';
-			} elseif ( $leading_wild ) {
-				$wild = 'leading';
-			} elseif ( $trailing_wild ) {
-				$wild = 'trailing';
-			} else {
-				$wild = false;
-			}
-			if ( $wild ) {
-				$search = trim( $search, '*' );
-			}
-
-			$search_columns = array();
-			if ( $qv['search_columns'] ) {
-				$search_columns = array_intersect( $qv['search_columns'], array( 'ID', 'user_login', 'user_email', 'user_url', 'user_nicename', 'display_name' ) );
-			}
-			if ( ! $search_columns ) {
-				if ( false !== strpos( $search, '@' ) ) {
-					$search_columns = array( 'user_email' );
-				} elseif ( is_numeric( $search ) ) {
-					$search_columns = array( 'user_login', 'ID' );
-				} elseif ( preg_match( '|^https?://|', $search ) && ! ( is_multisite() && wp_is_large_network( 'users' ) ) ) {
-					$search_columns = array( 'user_url' );
-				} else {
-					$search_columns = array( 'user_login', 'user_url', 'user_email', 'user_nicename', 'display_name' );
-				}
-			}
-
-			/**
-			 * Filters the columns to search in a WP_User_Query search.
-			 *
-			 * The default columns depend on the search term, and include 'ID', 'user_login',
-			 * 'user_email', 'user_url', 'user_nicename', and 'display_name'.
-			 *
-			 * @since 3.6.0
-			 *
-			 * @param string[]      $search_columns Array of column names to be searched.
-			 * @param string        $search         Text being searched.
-			 * @param WP_User_Query $query          The current WP_User_Query instance.
-			 */
-			$search_columns = apply_filters( 'user_search_columns', $search_columns, $search, $this );
-
-			$this->query_where .= $this->get_search_sql( $search, $search_columns, $wild );
-		}
-
-		if ( ! empty( $include ) ) {
-			// Sanitized earlier.
-			$ids                = implode( ',', $include );
-			$this->query_where .= " AND $wpdb->users.ID IN ($ids)";
-		} elseif ( ! empty( $qv['exclude'] ) ) {
-			$ids                = implode( ',', wp_parse_id_list( $qv['exclude'] ) );
-			$this->query_where .= " AND $wpdb->users.ID NOT IN ($ids)";
-		}
-
-		// Date queries are allowed for the user_registered field.
-		if ( ! empty( $qv['date_query'] ) && is_array( $qv['date_query'] ) ) {
-			$date_query         = new WP_Date_Query( $qv['date_query'], 'user_registered' );
-			$this->query_where .= $date_query->get_sql();
-		}
-
-		/**
-		 * Fires after the WP_User_Query has been parsed, and before
-		 * the query is executed.
-		 *
-		 * The passed WP_User_Query object contains SQL parts formed
-		 * from parsing the given query.
-		 *
-		 * @since 3.1.0
-		 *
-		 * @param WP_User_Query $query Current instance of WP_User_Query (passed by reference).
-		 */
-		do_action_ref_array( 'pre_user_query', array( &$this ) );
-	}
-
-	/**
-	 * Execute the query, with the current variables.
-	 *
-	 * @since 3.1.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 */
-	public function query() {
-		global $wpdb;
-
-		$qv =& $this->query_vars;
-
-		/**
-		 * Filters the users array before the query takes place.
-		 *
-		 * Return a non-null value to bypass WordPress' default user queries.
-		 *
-		 * Filtering functions that require pagination information are encouraged to set
-		 * the `total_users` property of the WP_User_Query object, passed to the filter
-		 * by reference. If WP_User_Query does not perform a database query, it will not
-		 * have enough information to generate these values itself.
-		 *
-		 * @since 5.1.0
-		 *
-		 * @param array|null    $results Return an array of user data to short-circuit WP's user query
-		 *                               or null to allow WP to run its normal queries.
-		 * @param WP_User_Query $query   The WP_User_Query instance (passed by reference).
-		 */
-		$this->results = apply_filters_ref_array( 'users_pre_query', array( null, &$this ) );
-
-		if ( null === $this->results ) {
-			$this->request = "SELECT $this->query_fields $this->query_from $this->query_where $this->query_orderby $this->query_limit";
-
-			if ( is_array( $qv['fields'] ) || 'all' === $qv['fields'] ) {
-				$this->results = $wpdb->get_results( $this->request );
-			} else {
-				$this->results = $wpdb->get_col( $this->request );
-			}
-
-			if ( isset( $qv['count_total'] ) && $qv['count_total'] ) {
-				/**
-				 * Filters SELECT FOUND_ROWS() query for the current WP_User_Query instance.
-				 *
-				 * @since 3.2.0
-				 * @since 5.1.0 Added the `$this` parameter.
-				 *
-				 * @global wpdb $wpdb WordPress database abstraction object.
-				 *
-				 * @param string        $sql   The SELECT FOUND_ROWS() query for the current WP_User_Query.
-				 * @param WP_User_Query $query The current WP_User_Query instance.
-				 */
-				$found_users_query = apply_filters( 'found_users_query', 'SELECT FOUND_ROWS()', $this );
-
-				$this->total_users = (int) $wpdb->get_var( $found_users_query );
-			}
-		}
-
-		if ( ! $this->results ) {
-			return;
-		}
-
-		if ( 'all_with_meta' === $qv['fields'] ) {
-			cache_users( $this->results );
-
-			$r = array();
-			foreach ( $this->results as $userid ) {
-				$r[ $userid ] = new WP_User( $userid, '', $qv['blog_id'] );
-			}
-
-			$this->results = $r;
-		} elseif ( 'all' === $qv['fields'] ) {
-			foreach ( $this->results as $key => $user ) {
-				$this->results[ $key ] = new WP_User( $user, '', $qv['blog_id'] );
-			}
-		}
-	}
-
-	/**
-	 * Retrieve query variable.
-	 *
-	 * @since 3.5.0
-	 *
-	 * @param string $query_var Query variable key.
-	 * @return mixed
-	 */
-	public function get( $query_var ) {
-		if ( isset( $this->query_vars[ $query_var ] ) ) {
-			return $this->query_vars[ $query_var ];
-		}
-
-		return null;
-	}
-
-	/**
-	 * Set query variable.
-	 *
-	 * @since 3.5.0
-	 *
-	 * @param string $query_var Query variable key.
-	 * @param mixed  $value     Query variable value.
-	 */
-	public function set( $query_var, $value ) {
-		$this->query_vars[ $query_var ] = $value;
-	}
-
-	/**
-	 * Used internally to generate an SQL string for searching across multiple columns
-	 *
-	 * @since 3.1.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 *
-	 * @param string $string
-	 * @param array  $cols
-	 * @param bool   $wild   Whether to allow wildcard searches. Default is false for Network Admin, true for single site.
-	 *                       Single site allows leading and trailing wildcards, Network Admin only trailing.
-	 * @return string
-	 */
-	protected function get_search_sql( $string, $cols, $wild = false ) {
-		global $wpdb;
-
-		$searches      = array();
-		$leading_wild  = ( 'leading' === $wild || 'both' === $wild ) ? '%' : '';
-		$trailing_wild = ( 'trailing' === $wild || 'both' === $wild ) ? '%' : '';
-		$like          = $leading_wild . $wpdb->esc_like( $string ) . $trailing_wild;
-
-		foreach ( $cols as $col ) {
-			if ( 'ID' === $col ) {
-				$searches[] = $wpdb->prepare( "$col = %s", $string );
-			} else {
-				$searches[] = $wpdb->prepare( "$col LIKE %s", $like );
-			}
-		}
-
-		return ' AND (' . implode( ' OR ', $searches ) . ')';
-	}
-
-	/**
-	 * Return the list of users.
-	 *
-	 * @since 3.1.0
-	 *
-	 * @return array Array of results.
-	 */
-	public function get_results() {
-		return $this->results;
 	}
 
 	/**
@@ -908,21 +232,27 @@ class WP_User_Query {
 	 * @param string $orderby Alias for the field to order by.
 	 * @return string Value to used in the ORDER clause, if `$orderby` is valid.
 	 */
-	protected function parse_orderby( $orderby ) {
+	protected function parse_orderby() {
 		global $wpdb;
+
+		$q       = &$this->query_vars;
+		$orderby = $q['orderby'] ?: $this->default_order_by;
+		if (!$orderby or 'none' == $orderby) {
+			return;
+		}
 
 		$meta_query_clauses = $this->meta_query->get_clauses();
 
 		$_orderby = '';
-		if ( in_array( $orderby, array( 'login', 'nicename', 'email', 'url', 'registered' ), true ) ) {
+		if (in_array($orderby, ['login', 'nicename', 'email', 'url', 'registered'], true)) {
 			$_orderby = 'user_' . $orderby;
-		} elseif ( in_array( $orderby, array( 'user_login', 'user_nicename', 'user_email', 'user_url', 'user_registered' ), true ) ) {
+		} elseif (in_array($orderby, ['user_login', 'user_nicename', 'user_email', 'user_url', 'user_registered'], true)) {
 			$_orderby = $orderby;
-		} elseif ( 'name' === $orderby || 'display_name' === $orderby ) {
+		} elseif ('name' === $orderby || 'display_name' === $orderby) {
 			$_orderby = 'display_name';
-		} elseif ( 'post_count' === $orderby ) {
+		} elseif ('post_count' === $orderby) {
 			// @todo Avoid the JOIN.
-			$where             = get_posts_by_author_sql( 'post' );
+			$where = get_posts_by_author_sql('post');
 			$this->query_from .= " LEFT OUTER JOIN (
 				SELECT post_author, COUNT(*) as post_count
 				FROM $wpdb->posts
@@ -930,122 +260,39 @@ class WP_User_Query {
 				GROUP BY post_author
 			) p ON ({$wpdb->users}.ID = p.post_author)
 			";
-			$_orderby          = 'post_count';
-		} elseif ( 'ID' === $orderby || 'id' === $orderby ) {
+			$_orderby = 'post_count';
+		} elseif ('ID' === $orderby || 'id' === $orderby) {
 			$_orderby = 'ID';
-		} elseif ( 'meta_value' === $orderby || $this->get( 'meta_key' ) == $orderby ) {
+		} elseif ('meta_value' === $orderby || $this->get('meta_key') == $orderby) {
 			$_orderby = "$wpdb->usermeta.meta_value";
-		} elseif ( 'meta_value_num' === $orderby ) {
+		} elseif ('meta_value_num' === $orderby) {
 			$_orderby = "$wpdb->usermeta.meta_value+0";
-		} elseif ( 'include' === $orderby && ! empty( $this->query_vars['include'] ) ) {
-			$include     = wp_parse_id_list( $this->query_vars['include'] );
-			$include_sql = implode( ',', $include );
+		} elseif ('include' === $orderby && !empty($this->query_vars['include'])) {
+			$include     = wp_parse_id_list($this->query_vars['include']);
+			$include_sql = implode(',', $include);
 			$_orderby    = "FIELD( $wpdb->users.ID, $include_sql )";
-		} elseif ( 'nicename__in' === $orderby ) {
-			$sanitized_nicename__in = array_map( 'esc_sql', $this->query_vars['nicename__in'] );
-			$nicename__in           = implode( "','", $sanitized_nicename__in );
+		} elseif ('nicename__in' === $orderby) {
+			$sanitized_nicename__in = array_map('esc_sql', $this->query_vars['nicename__in']);
+			$nicename__in           = implode("','", $sanitized_nicename__in);
 			$_orderby               = "FIELD( user_nicename, '$nicename__in' )";
-		} elseif ( 'login__in' === $orderby ) {
-			$sanitized_login__in = array_map( 'esc_sql', $this->query_vars['login__in'] );
-			$login__in           = implode( "','", $sanitized_login__in );
+		} elseif ('login__in' === $orderby) {
+			$sanitized_login__in = array_map('esc_sql', $this->query_vars['login__in']);
+			$login__in           = implode("','", $sanitized_login__in);
 			$_orderby            = "FIELD( user_login, '$login__in' )";
-		} elseif ( isset( $meta_query_clauses[ $orderby ] ) ) {
-			$meta_clause = $meta_query_clauses[ $orderby ];
-			$_orderby    = sprintf( 'CAST(%s.meta_value AS %s)', esc_sql( $meta_clause['alias'] ), esc_sql( $meta_clause['cast'] ) );
+		} elseif (isset($meta_query_clauses[$orderby])) {
+			$meta_clause = $meta_query_clauses[$orderby];
+			$_orderby    = sprintf('CAST(%s.meta_value AS %s)', esc_sql($meta_clause['alias']), esc_sql($meta_clause['cast']));
 		}
 
-		return $_orderby;
-	}
+		if (!empty($_orderby)) {
+			$order   = $this->parse_order($q['order']);
+			$orderby = "{$_orderby} {$order}";
 
-	/**
-	 * Parse an 'order' query variable and cast it to ASC or DESC as necessary.
-	 *
-	 * @since 4.2.0
-	 *
-	 * @param string $order The 'order' query variable.
-	 * @return string The sanitized 'order' query variable.
-	 */
-	protected function parse_order( $order ) {
-		if ( ! is_string( $order ) || empty( $order ) ) {
-			return 'DESC';
-		}
-
-		if ( 'ASC' === strtoupper( $order ) ) {
-			return 'ASC';
-		} else {
-			return 'DESC';
+			$this->orderby = 'ORDER BY ' . $orderby;
 		}
 	}
 
-	/**
-	 * Make private properties readable for backward compatibility.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param string $name Property to get.
-	 * @return mixed Property.
-	 */
-	public function __get( $name ) {
-		if ( in_array( $name, $this->compat_fields, true ) ) {
-			return $this->$name;
-		}
-	}
-
-	/**
-	 * Make private properties settable for backward compatibility.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param string $name  Property to check if set.
-	 * @param mixed  $value Property value.
-	 * @return mixed Newly-set property.
-	 */
-	public function __set( $name, $value ) {
-		if ( in_array( $name, $this->compat_fields, true ) ) {
-			return $this->$name = $value;
-		}
-	}
-
-	/**
-	 * Make private properties checkable for backward compatibility.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param string $name Property to check if set.
-	 * @return bool Whether the property is set.
-	 */
-	public function __isset( $name ) {
-		if ( in_array( $name, $this->compat_fields, true ) ) {
-			return isset( $this->$name );
-		}
-	}
-
-	/**
-	 * Make private properties un-settable for backward compatibility.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param string $name Property to unset.
-	 */
-	public function __unset( $name ) {
-		if ( in_array( $name, $this->compat_fields, true ) ) {
-			unset( $this->$name );
-		}
-	}
-
-	/**
-	 * Make private/protected methods readable for backward compatibility.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param string $name      Method to call.
-	 * @param array  $arguments Arguments to pass when calling.
-	 * @return mixed Return value of the callback, false otherwise.
-	 */
-	public function __call( $name, $arguments ) {
-		if ( 'get_search_sql' === $name ) {
-			return $this->get_search_sql( ...$arguments );
-		}
-		return false;
+	protected static function instantiate_item(object $item): object {
+		return new WP_User($item);
 	}
 }
