@@ -233,7 +233,7 @@ class WP_Term_Query extends WP_Query_Abstract {
 	 * parse term relationships query
 	 *
 	 */
-	protected function parse_relationship_query() {
+	protected function parse_expansion_query() {
 		global $wpdb;
 		$object_ids = (array) $this->query_vars['object_ids'];
 		if (empty($object_ids)) {

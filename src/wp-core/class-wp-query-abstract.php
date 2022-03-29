@@ -259,8 +259,8 @@ abstract class WP_Query_Abstract {
 		// Handle complex date queries.
 		$this->parse_date_query();
 
-		// Other relationships query. Used to expand the query, default is empty.
-		$this->parse_relationship_query();
+		// Other expansion query. Used to expand the query, default is empty.
+		$this->parse_expansion_query();
 
 		// Search
 		if ('' !== ($q['search'])) {
@@ -405,7 +405,7 @@ abstract class WP_Query_Abstract {
 	 * Other relationships query. Used to expand the query, default is empty.
 	 * When needed, define in subclasses.
 	 */
-	protected function parse_relationship_query() {}
+	protected function parse_expansion_query() {}
 
 	/**
 	 * Used internally to generate an SQL string for searching across multiple columns
