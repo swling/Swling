@@ -17,6 +17,7 @@ require ABSPATH . WPINC . '/formatting.php';
 require ABSPATH . WPINC . '/option.php';
 require ABSPATH . WPINC . '/meta.php';
 require ABSPATH . WPINC . '/taxonomy.php';
+require ABSPATH . WPINC . '/user.php';
 require ABSPATH . WPINC . '/post.php';
 require ABSPATH . WPINC . '/term.php';
 require ABSPATH . WPINC . '/comment.php';
