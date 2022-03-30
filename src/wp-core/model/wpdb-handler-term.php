@@ -18,7 +18,7 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 
 	use Singleton_Trait;
 
-	protected function check_insert_data(array $data) {
+	protected function check_insert_data(array $data): array{
 		// Term common check
 		static::common_check($data);
 
@@ -48,9 +48,11 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 		} elseif (get_term_by('name', $data['name'], $taxonomy)) {
 			throw new Exception(__('A term with the name provided already exists.'));
 		}
+
+		return $data;
 	}
 
-	protected function check_update_data(array $data) {
+	protected function check_update_data(array $data): array{
 		// Term common check
 		static::common_check($data);
 
@@ -88,6 +90,8 @@ class WPDB_Handler_Term extends WPDB_Handler_Abstract {
 				throw new Exception(__('A term with the name provided already exists.'));
 			}
 		}
+
+		return $data;
 	}
 
 	/**

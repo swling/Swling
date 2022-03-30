@@ -23,6 +23,7 @@ use Exception;
  * - Get : data（object） or false
  * - Insert/Update : ID（int） or 0
  * - Delete :  ID (int) or 0
+ *
  */
 abstract class WPDB_Handler_Abstract {
 
@@ -68,7 +69,7 @@ abstract class WPDB_Handler_Abstract {
 		$data = apply_filters("insert_{$this->object_name}_data", $data);
 		do_action("before_insert_{$this->object_name}", $data);
 
-		$this->_check_insert_data($data);
+		$data   = $this->parse_insert_data($data);
 		$insert = $this->wpdb->insert($this->table, $data);
 		if ($insert) {
 			$this->refresh_db_table_last_changed();
@@ -137,7 +138,7 @@ abstract class WPDB_Handler_Abstract {
 		$ID            = $data[$this->primary_id_column] ?? 0;
 		$object_before = $this->get($ID);
 		$data          = array_merge((array) $object_before, $data);
-		$this->_check_update_data($data);
+		$data          = $this->parse_update_data($data);
 
 		$where  = [$this->primary_id_column => $ID];
 		$update = $this->wpdb->update($this->table, $data, $where);
@@ -178,7 +179,7 @@ abstract class WPDB_Handler_Abstract {
 	 * check insert data
 	 * @access private
 	 */
-	private function _check_insert_data(array $data) {
+	private function parse_insert_data(array $data): array{
 		if (!$this->required_columns) {
 			throw new Exception('Required columns have not been initialized');
 		}
@@ -189,19 +190,19 @@ abstract class WPDB_Handler_Abstract {
 			}
 		}
 
-		$this->check_insert_data($data);
+		return $this->check_insert_data($data);
 	}
 
 	/**
 	 * check insert data
 	 */
-	abstract protected function check_insert_data(array $data);
+	abstract protected function check_insert_data(array $data): array;
 
 	/**
 	 * check update data
 	 * @access private
 	 */
-	private function _check_update_data(array $data) {
+	private function parse_update_data(array $data): array{
 		$ID = $data[$this->primary_id_column] ?? 0;
 		if (!$ID) {
 			throw new Exception('Primary ID column are empty on update: ' . $this->primary_id_column);
@@ -211,13 +212,13 @@ abstract class WPDB_Handler_Abstract {
 			throw new Exception('Primary ID is invalid');
 		}
 
-		$this->check_update_data($data);
+		return $this->check_update_data($data);
 	}
 
 	/**
 	 * check update data
 	 */
-	abstract protected function check_update_data(array $data);
+	abstract protected function check_update_data(array $data): array;
 
 	/**
 	 * maybe get data from cache

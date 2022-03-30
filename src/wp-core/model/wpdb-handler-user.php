@@ -17,16 +17,18 @@ class WPDB_Handler_User extends WPDB_Handler_Abstract {
 
 	use Singleton_Trait;
 
-	protected function check_insert_data(array $data) {
+	protected function check_insert_data(array $data): array{
 		static::common_check($data);
 
 		// 用户名去重
 		if ($this->get_by('user_login', $data['user_login'])) {
 			throw new Exception('existing_user_login');
 		}
+
+		return $data;
 	}
 
-	protected function check_update_data(array $data) {
+	protected function check_update_data(array $data): array{
 		static::common_check($data);
 
 		// 用户名去重
@@ -36,6 +38,8 @@ class WPDB_Handler_User extends WPDB_Handler_Abstract {
 				throw new Exception('existing_user_login');
 			}
 		}
+
+		return $data;
 	}
 
 	private function common_check(array $data) {

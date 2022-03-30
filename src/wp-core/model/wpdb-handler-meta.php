@@ -30,9 +30,13 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 
 	use Singleton_Trait;
 
-	protected function check_insert_data(array $data) {}
+	protected function check_insert_data(array $data): array{
+		return $data;
+	}
 
-	protected function check_update_data(array $data) {}
+	protected function check_update_data(array $data): array{
+		return $data;
+	}
 
 	/**
 	 * init meta type

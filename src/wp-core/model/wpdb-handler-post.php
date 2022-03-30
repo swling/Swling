@@ -17,9 +17,17 @@ class WPDB_Handler_Post extends WPDB_Handler_Abstract {
 
 	use Singleton_Trait;
 
-	protected function check_insert_data(array $data) {}
+	protected function check_insert_data(array $data): array{
+		$this->common_check($data);
 
-	protected function check_update_data(array $data) {}
+		return $data;
+	}
+
+	protected function check_update_data(array $data): array{
+		$this->common_check($data);
+
+		return $data;
+	}
 
 	private function common_check(array $data) {
 		$parent = (int) $data['parent'] ?? 0;
