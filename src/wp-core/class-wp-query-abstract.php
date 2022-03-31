@@ -206,17 +206,24 @@ abstract class WP_Query_Abstract {
 		// Get Cache
 		$cache = $this->get_query_cache();
 		if (false !== $cache) {
-			$this->results = $this->maybe_instantiate_results($cache);
+			$this->results = $this->instantiate_results($cache);
 			return $this->results;
 		}
 
 		// excute sql query
-		$results = $this->wpdb->get_results($this->request);
+		$fields = $this->query_vars['fields'];
+		if (is_array($fields) or 'all' == $fields or !$fields) {
+			$results = $this->wpdb->get_results($this->request);
+			$results = $this->instantiate_results($results);
+		} else {
+			$results = $this->wpdb->get_col($this->request);
+		}
+
 		if ($results) {
-			$this->results      = $this->maybe_instantiate_results($results);
 			$this->result_count = count($results);
 			$this->set_found_results($this->query_vars, $this->limits);
 		}
+		$this->results = $results;
 
 		// prevent duplicate queries
 		$this->executed = true;
@@ -237,19 +244,12 @@ abstract class WP_Query_Abstract {
 		}
 
 		$q = &$this->query_vars;
-		switch ($q['fields']) {
-			case 'ids':
-				$this->fields = "{$this->table}.$this->primary_id_column";
-				break;
-			case 'id=>parent':
-				$this->fields = "{$this->table}.$this->primary_id_column, {$this->table}.post_parent";
-				break;
-			default:
-				$this->fields = "{$this->table}.*";
-		}
+
+		// Select fileds
+		$this->parse_select_fields();
 
 		// Post Field Query
-		$this->parse_field_query();
+		$this->parse_row_query();
 
 		// Tax Query
 		$this->parse_tax_query();
@@ -259,6 +259,9 @@ abstract class WP_Query_Abstract {
 
 		// Handle complex date queries.
 		$this->parse_date_query();
+
+		// field __in / __not_in
+		$this->parse_in();
 
 		// Other expansion query. Used to expand the query, default is empty.
 		$this->parse_expansion_query();
@@ -335,12 +338,32 @@ abstract class WP_Query_Abstract {
 		}
 	}
 
+	protected function parse_select_fields() {
+		$q = &$this->query_vars;
+
+		if (!$q['fields'] or 'all' == $q['fields']) {
+			$this->fields = '*';
+			return;
+		}
+
+		if ('ids' == $q['fields']) {
+			$this->fields = "$this->primary_id_column";
+			return;
+		}
+
+		if (is_array($q['fields'])) {
+			$this->fields = implode("', '", array_map('esc_sql', $q['fields']));
+		} else {
+			$this->fields = $q['fields'];
+		}
+	}
+
 	/**
 	 * IN 比 OR 快？
 	 * @link https://stackoverflow.com/questions/782915/mysql-or-vs-in-performance
 	 *
 	 **/
-	protected function parse_field_query() {
+	protected function parse_row_query() {
 		global $wpdb;
 		$qv = &$this->query_vars;
 
@@ -399,6 +422,31 @@ abstract class WP_Query_Abstract {
 		if (!empty($q['date_query']) and $this->date_column) {
 			$this->date_query = new WP_Date_Query($q['date_query'], $this->date_column);
 			$this->where .= $this->date_query->get_sql();
+		}
+	}
+
+	protected function parse_in() {
+		$q = &$this->query_vars;
+		foreach ($q as $key => $value) {
+			if (!$value) {
+				continue;
+			}
+
+			if (str_ends_with($key, '__in')) {
+				$field         = str_replace('__in', '', $key);
+				$sanitized__in = array_map('esc_sql', $value);
+				$__in          = implode("','", $sanitized__in);
+				$this->where .= " AND {$field} IN ( '$__in' )";
+				continue;
+			}
+
+			if (str_ends_with($key, '__not_in')) {
+				$field         = str_replace('__not_in', '', $key);
+				$sanitized__in = array_map('esc_sql', $value);
+				$not__in       = implode("','", $sanitized__in);
+				$this->where .= " AND {$field} NOT IN ( '$not__in' )";
+				continue;
+			}
 		}
 	}
 
@@ -557,14 +605,10 @@ abstract class WP_Query_Abstract {
 	}
 
 	/**
-	 * maybe instantiate the results item to WP object
+	 * instantiate the results item to WP object
 	 */
-	protected function maybe_instantiate_results(array $results): array{
-		if (!$this->query_vars['fields'] or 'all' == $this->query_vars['fields']) {
-			$results = array_map([$this, 'instantiate_item'], $results);
-		}
-
-		return $results;
+	protected function instantiate_results(array $results): array{
+		return array_map([$this, 'instantiate_item'], $results);
 	}
 
 	/**

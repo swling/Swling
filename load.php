@@ -48,7 +48,7 @@ wp_start_object_cache();
 // Taxonomy
 create_initial_taxonomies();
 
-// Post Type
+// Post Type and Status
 create_initial_post_types();
 
 // current theme functions.php

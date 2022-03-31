@@ -44,6 +44,7 @@ https://stackoverflow.com/questions/50992188/how-to-push-a-shallow-clone-to-a-ne
 
 - 函数出错若需包含信息，返回 wp_error 类中 抛出异常
 <!-- - wpdb_handler 改为单例模式 -->
+- 统一 post term user comment 实例，继承抽象对象 WP_Object 
 
 ## 数据库操作相关函数返回值规范
 - Get : data (单行：objcet; 多行：array) or false
