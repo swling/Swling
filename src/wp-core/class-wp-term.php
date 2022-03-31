@@ -15,7 +15,7 @@
  *
  * @property-read object $data Sanitized term data.
  */
-final class WP_Term {
+final class WP_Term extends WP_Object {
 
 	/**
 	 * Term ID.
@@ -99,29 +99,18 @@ final class WP_Term {
 	 * @return WP_Term|false WP_Term instance on success, false for miscellaneous failure.
 	 */
 	public static function get_instance(int $term_id) {
-		$handler = WP_Core\Model\WPDB_Handler_Term::get_instance();
-		$_term   = $handler->get($term_id);
-		if (!$_term) {
-			return false;
-		}
-
-		$term_obj = new WP_Term($_term);
+		$term_obj = parent::get_instance($term_id);
 		$term_obj->filter($term_obj->filter);
 
 		return $term_obj;
 	}
 
 	/**
-	 * Constructor.
+	 * get wpdb handler instance
 	 *
-	 * @since 4.4.0
-	 *
-	 * @param WP_Term|object $term Term object.
 	 */
-	public function __construct($term) {
-		foreach (get_object_vars($term) as $key => $value) {
-			$this->$key = $value;
-		}
+	protected static function get_wpdb_handler(): object {
+		return WP_Core\Model\WPDB_Handler_Term::get_instance();
 	}
 
 	/**
@@ -133,17 +122,6 @@ final class WP_Term {
 	 */
 	public function filter($filter) {
 		static::sanitize_term($this, $filter);
-	}
-
-	/**
-	 * Converts an object to array.
-	 *
-	 * @since 4.4.0
-	 *
-	 * @return array Object as array.
-	 */
-	public function to_array() {
-		return get_object_vars($this);
 	}
 
 	/**

@@ -18,7 +18,7 @@
  * @property-read int    $post_category
  * @property-read string $tag_input
  */
-final class WP_Post {
+final class WP_Post extends WP_Object {
 
 	/**
 	 * Post ID.
@@ -209,49 +209,10 @@ final class WP_Post {
 	public $comment_count = 0;
 
 	/**
-	 * Retrieve WP_Post instance.
+	 * get wpdb handler instance
 	 *
-	 * @since 3.5.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 *
-	 * @param int $post_id Post ID.
-	 * @return WP_Post|false Post object, false otherwise.
 	 */
-	public static function get_instance(int $post_id) {
-		$handler = WP_Core\Model\WPDB_Handler_Post::get_instance();
-		$post    = $handler->get($post_id);
-
-		if (!$post) {
-			return $post;
-		}
-
-		return new WP_Post($post);
-	}
-
-	/**
-	 * Constructor.
-	 *
-	 * @since 3.5.0
-	 *
-	 * @param WP_Post|object $post Post object.
-	 */
-	public function __construct(object $post) {
-		foreach (get_object_vars($post) as $key => $value) {
-			$this->$key = $value;
-		}
-	}
-
-	/**
-	 * Convert object to array.
-	 *
-	 * @since 3.5.0
-	 *
-	 * @return array Object as array.
-	 */
-	public function to_array(): array{
-		$post = get_object_vars($this);
-
-		return $post;
+	protected static function get_wpdb_handler(): object {
+		return WP_Core\Model\WPDB_Handler_Post::get_instance();
 	}
 }

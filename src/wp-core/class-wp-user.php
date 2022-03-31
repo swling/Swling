@@ -36,7 +36,7 @@
  * @property string $syntax_highlighting
  * @property string $use_ssl
  */
-class WP_User {
+class WP_User extends WP_Object {
 	/**
 	 * User data container.
 	 *
@@ -60,24 +60,11 @@ class WP_User {
 	public $user_level = 0;
 
 	/**
-	 * Retrieve WP_User instance.
+	 * get wpdb handler instance
 	 *
-	 * @since 3.5.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 *
-	 * @param int $user_id User ID.
-	 * @return WP_User|false User object, false otherwise.
 	 */
-	public static function get_instance(int $user_id) {
-		$handler = WP_Core\Model\WPDB_Handler_User::get_instance();
-		$user    = $handler->get($user_id);
-
-		if (!$user) {
-			return $user;
-		}
-
-		return new static($user);
+	protected static function get_wpdb_handler(): object {
+		return WP_Core\Model\WPDB_Handler_User::get_instance();
 	}
 
 	/**
@@ -89,9 +76,7 @@ class WP_User {
 	 */
 	public function __construct(object $user) {
 		$this->user_level = static::get_user_level($user->ID);
-		foreach (get_object_vars($user) as $key => $value) {
-			$this->$key = $value;
-		}
+		parent::__construct($user);
 	}
 
 	public static function get_user_level(int $user_id): int {
@@ -100,18 +85,5 @@ class WP_User {
 
 	public static function update_user_level(int $user_id, int $user_level): int {
 		return update_user_meta($user_id, 'wp_user_level', $user_level);
-	}
-
-	/**
-	 * Convert object to array.
-	 *
-	 * @since 3.5.0
-	 *
-	 * @return array Object as array.
-	 */
-	public function to_array(): array{
-		$user = get_object_vars($this);
-
-		return $user;
 	}
 }

@@ -33,8 +33,6 @@ class WP_User_Query extends WP_Query_Abstract {
 	 */
 	private $total_users = 0;
 
-	private $compat_fields = ['results', 'total_users'];
-
 	/**
 	 * Fills in missing query variables with default values.
 	 *

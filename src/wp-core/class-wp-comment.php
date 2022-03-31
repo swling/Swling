@@ -12,7 +12,7 @@
  *
  * @since 4.4.0
  */
-final class WP_Comment {
+final class WP_Comment extends WP_Object {
 
 	/**
 	 * Comment ID.
@@ -170,50 +170,11 @@ final class WP_Comment {
 	protected $post_fields = array( 'post_author', 'post_date', 'post_date_gmt', 'post_content', 'post_title', 'post_excerpt', 'post_status', 'comment_status', 'ping_status', 'post_name', 'to_ping', 'pinged', 'post_modified', 'post_modified_gmt', 'post_content_filtered', 'post_parent', 'guid', 'menu_order', 'post_type', 'post_mime_type', 'comment_count' );
 
 	/**
-	 * Retrieves a WP_Comment instance.
+	 * get wpdb handler instance
 	 *
-	 * @since 4.4.0
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 *
-	 * @param int $id Comment ID.
-	 * @return WP_Comment|false Comment object, otherwise false.
 	 */
-	public static function get_instance( $id ) {
-		$handler = WP_Core\Model\WPDB_Handler_Comment::get_instance();
-		$_comment    = $handler->get($id);
-
-		if (!$_comment) {
-			return $_comment;
-		}
-
-		return new WP_Comment( $_comment );
-	}
-
-	/**
-	 * Constructor.
-	 *
-	 * Populates properties with object vars.
-	 *
-	 * @since 4.4.0
-	 *
-	 * @param WP_Comment $comment Comment object.
-	 */
-	public function __construct( $comment ) {
-		foreach ( get_object_vars( $comment ) as $key => $value ) {
-			$this->$key = $value;
-		}
-	}
-
-	/**
-	 * Convert object to array.
-	 *
-	 * @since 4.4.0
-	 *
-	 * @return array Object as array.
-	 */
-	public function to_array() {
-		return get_object_vars( $this );
+	protected static function get_wpdb_handler(): object {
+		return WP_Core\Model\WPDB_Handler_Comment::get_instance();
 	}
 
 	/**
