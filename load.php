@@ -30,6 +30,9 @@ require ABSPATH . WPINC . '/link-template.php';
 // 计时
 timer_start();
 
+// shutdown
+register_shutdown_function('shutdown_action_hook');
+
 // 实例化数据库连接
 $wpdb = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $wpdb->set_prefix($table_prefix);

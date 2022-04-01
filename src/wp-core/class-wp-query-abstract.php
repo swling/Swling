@@ -630,6 +630,8 @@ abstract class WP_Query_Abstract {
 
 	/**
 	 * last_changed 策略尚未完成
+	 *
+	 * memcached key max size: 250 bytes
 	 */
 	protected function build_cache_key(): string{
 		// $args can be anything. Only use the args defined in defaults to compute the key.
