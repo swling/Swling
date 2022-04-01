@@ -54,10 +54,10 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 	}
 
 	/**
-	 * query meta data array by object ID
+	 * Retrieves all raw metadata value for the specified object.
 	 * @return array|false
 	 */
-	public function get_object_meta_data(int $object_id) {
+	public function get_metadata_raw(int $object_id) {
 		$data = $this->get_object_meta_cache($object_id);
 		if (false !== $data) {
 			return $data;
@@ -80,7 +80,7 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 	 * @return object|false
 	 */
 	public function get_meta(int $object_id, string $meta_key) {
-		$data = $this->get_object_meta_data($object_id);
+		$data = $this->get_metadata_raw($object_id);
 		foreach ($data as $single_meta) {
 			if ($meta_key == $single_meta->meta_key) {
 				return $single_meta;

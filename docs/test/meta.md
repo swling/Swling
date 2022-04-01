@@ -2,8 +2,8 @@
 ## meta
 $handler = WP_Core\Model\WPDB_Handler_Meta::get_instance();
 $handler->set_meta_type('post');
-print_r($handler->get_object_meta_data(19));
-print_r($handler->get_object_meta_data(1));
+print_r($handler->get_metadata_raw(19));
+print_r($handler->get_metadata_raw(1));
 print_r($handler->get_meta(1, 'views'));
 print_r($handler->get_meta(1, 'nickname'));
 var_dump($handler->add_meta(1, 'nickname', time()));

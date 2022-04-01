@@ -47,13 +47,26 @@ function add_metadata(string $meta_type, int $object_id, string $meta_key, $meta
 }
 
 /**
+ * Retrieves all raw metadata value for the specified object.
+ *
+ * @param string $meta_type Type of object metadata is for. Accepts 'post', 'comment', 'term', 'user',
+ *                          or any other object type with an associated meta table.
+ * @param int    $object_id ID of the object metadata is for.
+ * @return array|false
+ */
+function get_metadata_raw(string $meta_type, int $object_id): mixed{
+	$handler = get_meta_handler($meta_type);
+	return $handler->get_metadata_raw($object_id);
+}
+
+/**
  * Retrieves the raw data of a metadata  for the specified object type and ID.
  *
  * @param string $meta_type Type of object metadata is for. Accepts 'post', 'comment', 'term', 'user',
  *                          or any other object type with an associated meta table.
  * @param int    $object_id ID of the object metadata is for.
- * @param string $meta_key  Optional. Metadata key. If not specified, retrieve all metadata for
- *                          the specified object. Default empty.
+ * @param string $meta_key  Metadata key.
+ *
  * @return object|false     The object of the meta
  */
 function get_meta_object(string $meta_type, int $object_id, string $meta_key) {
