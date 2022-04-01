@@ -60,9 +60,10 @@ class WP_Scripts extends WP_Dependencies {
 
 		$obj = $this->registered[$handle];
 		$ver = $obj->ver ? $obj->ver : $this->default_version;
-		if (!empty($ver)) {
-			$src = add_query_arg('ver', $ver, $obj->src);
-		}
+		$src = $ver ? add_query_arg('ver', $ver, $obj->src) : $obj->src;
+
+		// extra script
+		$this->print_extra_script($handle);
 
 		$tag = $before_handle;
 		$tag .= sprintf("<script%s src='%s' id='%s-js'></script>\n", $this->type_attr, $src, esc_attr($handle));
@@ -122,6 +123,40 @@ class WP_Scripts extends WP_Dependencies {
 		}
 
 		return $output;
+	}
+
+	/**
+	 * Localizes a script, only if the script has already been added.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $handle      Name of the script to attach data to.
+	 * @param string $object_name Name of the variable that will contain the data.
+	 * @param array  $data        Array of data to localize.
+	 * @return bool True on success, false on failure.
+	 */
+	public function localize(string $handle, string $object_name, array $data) {
+		foreach ($data as $key => $value) {
+			if (!is_scalar($value)) {
+				continue;
+			}
+
+			$data[$key] = html_entity_decode((string) $value, ENT_QUOTES, 'UTF-8');
+		}
+
+		$script = "var $object_name = " . json_encode($data) . ';';
+
+		if (!empty($after)) {
+			$script .= "\n$after;";
+		}
+
+		$data = $this->get_data($handle, 'data');
+
+		if (!empty($data)) {
+			$script = "$data\n$script";
+		}
+
+		return $this->add_data($handle, 'data', $script);
 	}
 
 	/**
