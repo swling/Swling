@@ -146,12 +146,7 @@ class WP_Scripts extends WP_Dependencies {
 
 		$script = "var $object_name = " . json_encode($data) . ';';
 
-		if (!empty($after)) {
-			$script .= "\n$after;";
-		}
-
 		$data = $this->get_data($handle, 'data');
-
 		if (!empty($data)) {
 			$script = "$data\n$script";
 		}
