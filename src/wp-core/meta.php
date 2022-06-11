@@ -56,7 +56,7 @@ function add_metadata(string $meta_type, int $object_id, string $meta_key, $meta
  */
 function get_metadata_raw(string $meta_type, int $object_id): mixed{
 	$handler = get_meta_handler($meta_type);
-	return $handler->get_metadata_raw($object_id);
+	return $handler->get_rows($object_id);
 }
 
 /**

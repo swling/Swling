@@ -14,11 +14,10 @@ use WP_Core\Utility\Singleton_Trait;
  *
  * ## 注意
  * meta 统一按 $object_id_column 缓存获取"组数据”，不单独按字段名缓存“行数据”
- * 故此设置 $this->object_cache_fields = [];
- * 即：meta 不沿用 WPDB_Handler_Abstract 缓存机制
- * 与 WordPress 不同，本框架同一 object id 不支持多个重名 meta key
+ * 故此设置 $this->object_cache_fields = [$this->primary_id_column] 仅缓存主键，用作更新删除等操作;
+ * !与 WordPress 不同，本框架同一 object id 不支持多个重名 meta key
  */
-class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
+class WPDB_Handler_Meta extends WPDB_Handler_Rows {
 
 	protected $table_name;
 	protected $object_name;
@@ -26,7 +25,7 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 	protected $required_columns    = [];
 	protected $object_cache_fields = [];
 
-	private $object_id_column;
+	protected $object_id_column;
 
 	use Singleton_Trait;
 
@@ -43,36 +42,15 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 	 * - postmeta、termmeta、usermeta、commentmeta
 	 */
 	public function set_meta_type(string $meta_type) {
-		$this->primary_id_column = ('user' === $meta_type) ? 'umeta_id' : 'meta_id';
-		$this->table_name        = $meta_type . 'meta';
-		$this->object_name       = $this->table_name;
-		$this->object_id_column  = $meta_type . '_id';
-		$this->required_columns  = [$this->object_id_column, 'meta_key', 'meta_value'];
+		$this->primary_id_column   = ('user' === $meta_type) ? 'umeta_id' : 'meta_id';
+		$this->table_name          = $meta_type . 'meta';
+		$this->object_name         = $this->table_name;
+		$this->object_id_column    = $meta_type . '_id';
+		$this->required_columns    = [$this->object_id_column, 'meta_key', 'meta_value'];
+		$this->object_cache_fields = [$this->primary_id_column];
 
 		$table_name  = $this->table_name;
 		$this->table = $this->wpdb->$table_name;
-	}
-
-	/**
-	 * Retrieves all raw metadata value for the specified object.
-	 * @return array|false
-	 */
-	public function get_metadata_raw(int $object_id) {
-		$data = $this->get_object_meta_cache($object_id);
-		if (false !== $data) {
-			return $data;
-		}
-
-		global $wpdb;
-		$data = $wpdb->get_results(
-			$wpdb->prepare("SELECT * FROM {$this->table} WHERE {$this->object_id_column} = %d ORDER BY %s ASC", $object_id, $this->primary_id_column)
-		);
-
-		if ($data) {
-			$this->set_object_meta_cache($object_id, $data);
-		}
-
-		return $data;
 	}
 
 	/**
@@ -80,14 +58,7 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 	 * @return object|false
 	 */
 	public function get_meta(int $object_id, string $meta_key) {
-		$data = $this->get_metadata_raw($object_id);
-		foreach ($data as $single_meta) {
-			if ($meta_key == $single_meta->meta_key) {
-				return $single_meta;
-			}
-		}
-
-		return false;
+		return $this->get_row($object_id, ['meta_key' => $meta_key]);
 	}
 
 	/**
@@ -116,11 +87,7 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 			'meta_value'            => $meta_value,
 		];
 
-		$meta_id = $this->insert($data);
-		if ($meta_id) {
-			$this->delete_object_meta_cache($object_id);
-		}
-		return $meta_id;
+		return $this->add_row($object_id, $data);
 	}
 
 	/**
@@ -142,54 +109,14 @@ class WPDB_Handler_Meta extends WPDB_Handler_Abstract {
 		$data               = (array) $data;
 		$data['meta_value'] = $meta_value;
 
-		$meta_id = $this->update($data);
-		if ($meta_id) {
-			$this->delete_object_meta_cache($object_id);
-		}
-		return $meta_id;
+		return $this->update_row($object_id, ['meta_key' => $meta_key], $data);
 	}
 
 	/**
 	 * delete meta data
 	 * @return int meta id
 	 */
-	public function delete_meta(int $object_id, string $meta_key): int{
-		$data = $this->get_meta($object_id, $meta_key);
-		if (!$data) {
-			return 0;
-		}
-
-		$primary_id_column = $this->primary_id_column;
-		$meta_id           = $data->$primary_id_column;
-
-		$meta_id = $this->delete($meta_id);
-		if ($meta_id) {
-			$this->delete_object_meta_cache($object_id);
-		}
-		return $meta_id;
-	}
-
-	/**
-	 * get cache of all meta data for specific object id
-	 * @return  mixed
-	 */
-	private function get_object_meta_cache(int $object_id): mixed {
-		return wp_cache_get($object_id, $this->table_name);
-	}
-
-	/**
-	 * set meta data cache for specific object id
-	 * @return  meta id
-	 */
-	private function set_object_meta_cache(int $object_id, array $data): bool {
-		return wp_cache_set($object_id, $data, $this->table_name);
-	}
-
-	/**
-	 * set meta data cache for specific object id
-	 * @return  meta id
-	 */
-	private function delete_object_meta_cache(int $object_id): bool {
-		return wp_cache_delete($object_id, $this->table_name);
+	public function delete_meta(int $object_id, string $meta_key): int {
+		return $this->delete_row($object_id, ['meta_key' => $meta_key]);
 	}
 }
