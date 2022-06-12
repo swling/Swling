@@ -41,6 +41,27 @@ abstract class WPDB_Handler_Rows extends WPDB_Handler_Abstract {
 	}
 
 	/**
+	 * delete specified object all rows
+	 *
+	 * @return int The number of rows updated
+	 */
+	public function delete_rows(int $object_id): int {
+		global $wpdb;
+		$action = $wpdb->delete($this->table, [$this->object_id_column => $object_id]);
+		if (!$action) {
+			return 0;
+		}
+
+		// 依次删除每一行数据对应的缓存
+		$old_data = $this->get_rows($object_id);
+		foreach ($old_data as $_data) {
+			$this->clean_row_cache($_data);
+		}
+
+		return $action;
+	}
+
+	/**
 	 * get single row data object by object ID and row key
 	 *
 	 * @param $object_id int

@@ -30,7 +30,13 @@ abstract class WPDB_Handler_Abstract {
 	protected $table_name;
 	protected $object_name;
 	protected $primary_id_column;
-	protected $required_columns    = [];
+	protected $required_columns = [];
+
+	/**
+	 * 需要缓存的字段
+	 * 注意被缓存的字段应该是唯一值，否则可能导致缓存混乱
+	 * @see $this->maybe_set_data_into_cache()
+	 */
 	protected $object_cache_fields = [];
 
 	protected $wpdb;
@@ -143,7 +149,7 @@ abstract class WPDB_Handler_Abstract {
 		$where  = [$this->primary_id_column => $ID];
 		$update = $this->wpdb->update($this->table, $data, $where);
 		if ($update) {
-			$this->clean_table_cache($object_before);
+			$this->clean_row_cache($object_before);
 
 			$object_after = $this->get($ID);
 			do_action("after_{$this->object_name}_updated", $ID, $object_after, $object_before);
@@ -167,7 +173,7 @@ abstract class WPDB_Handler_Abstract {
 		$where  = [$this->primary_id_column => $ID];
 		$delete = $this->wpdb->delete($this->table, $where);
 		if ($delete) {
-			$this->clean_table_cache($data);
+			$this->clean_row_cache($data);
 
 			do_action("after_{$this->object_name}_deleted", $data, $ID);
 		}
@@ -224,35 +230,50 @@ abstract class WPDB_Handler_Abstract {
 	 * maybe get data from cache
 	 */
 	private function maybe_get_data_from_cache(string $field, $value) {
-		if (!in_array($field, $this->object_cache_fields)) {
+		$cache_group = $this->generate_filed_cache_group($field);
+		if (false === $cache_group) {
 			return false;
 		}
 
-		return wp_cache_get($value, $this->table_name . ':' . $field);
+		return wp_cache_get($value, $cache_group);
 	}
 
 	/**
 	 * maybe set data into cache
 	 */
 	private function maybe_set_data_into_cache(string $field, $value, $data) {
-		if (!in_array($field, $this->object_cache_fields)) {
+		$cache_group = $this->generate_filed_cache_group($field);
+		if (false === $cache_group) {
 			return false;
 		}
 
-		return wp_cache_set($value, $data, $this->table_name . ':' . $field);
+		return wp_cache_set($value, $data, $cache_group);
 	}
 
 	/**
 	 * clean table cache When a row is deleted or updated
 	 */
-	protected function clean_table_cache(object $old_data) {
+	protected function clean_row_cache(object $old_data) {
 		foreach ($old_data as $field => $value) {
-			if (in_array($field, $this->object_cache_fields)) {
-				wp_cache_delete($value, $this->table_name . ':' . $field);
+			$cache_group = $this->generate_filed_cache_group($field);
+			if (false !== $cache_group) {
+				wp_cache_delete($value, $cache_group);
 			}
 		}
 
 		$this->refresh_db_table_last_changed();
+	}
+
+	/**
+	 * Generate field cache group name
+	 * @return string|false
+	 */
+	private function generate_filed_cache_group(string $field): mixed {
+		if (!in_array($field, $this->object_cache_fields)) {
+			return false;
+		}
+
+		return $this->table_name . ':' . $field;
 	}
 
 	/**
@@ -271,4 +292,5 @@ abstract class WPDB_Handler_Abstract {
 	public function get_current_db_table_last_changed(): string {
 		return wp_cache_get_last_changed($this->table_name);
 	}
+
 }
