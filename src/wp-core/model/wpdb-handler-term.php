@@ -5,7 +5,7 @@ use Exception;
 use WP_Core\Utility\Singleton_Trait;
 
 /**
- * @see Wwpdb->terms
+ * @see wpdb->terms
  *
  */
 class WPDB_Handler_Term extends WPDB_Handler_Abstract {
