@@ -8,6 +8,9 @@ spl_autoload_register(function ($class) {
 	$src_dir  = 'src';
 	$filename = str_replace('_', '-', $class);
 
+	// 临时代码：兼容插件命名空间
+	$filename = str_replace('Wnd\\', '', $filename);
+
 	/**
 	 * ### 不含命名空间的 WP 类自动加载
 	 * - 目录：wp-core

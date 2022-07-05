@@ -2,4 +2,5 @@
 *.log
 /.*/
 /content/themes/*
-!/content/themes/default/
+/content/extends/*
+# !/content/themes/default/

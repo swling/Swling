@@ -33,6 +33,29 @@ $table_prefix = 'wp_';
  */
 define('DB_COLLATE', '');
 
+// #########################################
+
+/**#@+
+ * 身份认证密钥与盐。
+ *
+ * 修改为任意独一无二的字串！
+ * 或者直接访问{@link https://api.wordpress.org/secret-key/1.1/salt/
+ * WordPress.org密钥生成服务}
+ * 任何修改都会导致所有cookies失效，所有用户将必须重新登录。
+ *
+ * @since 2.6.0
+ */
+define('AUTH_KEY',         'aaa-bbb-ccc-ddd');
+define('SECURE_AUTH_KEY',  'aaa-bbb-ccc-ddd');
+define('LOGGED_IN_KEY',    'aaa-bbb-ccc-ddd');
+define('NONCE_KEY',        'aaa-bbb-ccc-ddd');
+define('AUTH_SALT',        'aaa-bbb-ccc-ddd');
+define('SECURE_AUTH_SALT', 'aaa-bbb-ccc-ddd');
+define('LOGGED_IN_SALT',   'aaa-bbb-ccc-ddd');
+define('NONCE_SALT',       'aaa-bbb-ccc-ddd');
+
+/**#@-*/
+
 // ######################################### Debug 配置
 define('WP_DEBUG', true);
 define('WP_DEBUG_DISPLAY', null);
