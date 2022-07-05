@@ -101,6 +101,20 @@ function get_rest_url(string $path = '/'): string{
 }
 
 /**
+ * Retrieves the URL to a REST endpoint.
+ *
+ * Note: The returned URL is NOT escaped.
+ *
+ * @since 4.4.0
+ *
+ * @param string $path   Optional. REST route. Default empty.
+ * @return string Full URL to the endpoint.
+ */
+function rest_url($path = '') {
+	return get_rest_url($path);
+}
+
+/**
  * Retrieves a URL within the plugins or mu-plugins directory.
  *
  * Defaults to the plugins directory URL if no arguments are supplied.
