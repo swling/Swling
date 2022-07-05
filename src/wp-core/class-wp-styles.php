@@ -49,9 +49,7 @@ class WP_Styles extends WP_Dependencies {
 
 		$obj = $this->registered[$handle];
 		$ver = $obj->ver ? $obj->ver : $this->default_version;
-		if (!empty($ver)) {
-			$href = add_query_arg('ver', $ver, $obj->src);
-		}
+		$src = $ver ? add_query_arg('ver', $ver, $obj->src) : $obj->src;
 
 		$rel = isset($obj->extra['alt']) && $obj->extra['alt'] ? 'alternate stylesheet' : 'stylesheet';
 
@@ -59,7 +57,7 @@ class WP_Styles extends WP_Dependencies {
 			"<link rel='%s' id='%s-css' href='%s'%s media='all' />\n",
 			$rel,
 			$handle,
-			$href,
+			$src,
 			$this->type_attr
 		);
 		echo $tag;

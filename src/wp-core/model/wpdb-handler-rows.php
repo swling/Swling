@@ -6,7 +6,7 @@ namespace WP_Core\Model;
  * 同一张表中，具有共同属性的多行数据操作基类
  *
  * Rows 定义：具有共同属性的并列行数据典型如；
- * - wp_user_meta、wp_post_meta……
+ * - wp_user_meta （共同属性为 user_id）、wp_post_meta（共同属性为 post_id）……
  *
  * 约定：共同属性值为 int 类型
  * 作用：主要用于统一读写方法降低代码重复，并统一设置内存缓存（object cache）
