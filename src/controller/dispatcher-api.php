@@ -20,7 +20,7 @@ use Exception;
  * ……
  *
  * ### 插件拓展操作节点
- * - /{{api_prefix}}/extend/action/{{action}}
+ * - /{{api_prefix}}/extend/{plugin_slug}/action/{{action}}
  * ……
  */
 class Dispatcher_API {
@@ -84,9 +84,22 @@ class Dispatcher_API {
 		$path = $url_info['path'];
 
 		$handler   = str_replace(static::get_api_prefix() . '/', '', $path);
-		$path_info = explode('/', $handler, 2);
+		$path_info = explode('/', $handler);
+		$_route    = strtolower($path_info[0]);
 
-		$this->route   = $path_info[0];
+		/**
+		 * - 主题节点：theme/action/{{action}}
+		 * - 插件节点：extend/{plugin_slug}/action/{{action}}
+		 * - 核心节点：action/{{action}}
+		 */
+		if ('theme' == $_route) {
+			$this->route = $path_info[1] ?? '';
+		} elseif ('extend' == $_route) {
+			$this->route = $path_info[2] ?? '';
+		} else {
+			$this->route = $path_info[0];
+		}
+
 		$this->handler = $handler ? str_replace('/', '\\', $handler) : 'index';
 		$this->query   = $url_info['query'] ?? '';
 
