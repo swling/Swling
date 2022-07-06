@@ -110,6 +110,15 @@ class Dispatcher_API {
 		$route_method = 'handle_' . $this->route;
 
 		if ($this->handler and method_exists(__CLASS__, $route_method)) {
+
+			/**
+			 * 临时性代码：兼容插件命名空间
+			 * @since 2022.07.06
+			 */
+			if (!class_exists($this->handler)) {
+				$this->handler = 'Wnd\\' . $this->handler;
+			}
+
 			$response = static::$route_method($this->handler);
 			if ($response) {
 				header('Content-Type: application/json; charset=utf-8');
@@ -140,15 +149,7 @@ class Dispatcher_API {
 	 * @param $request
 	 */
 	protected static function handle_module($class): array{
-		/**
-		 * 临时性代码：兼容插件命名空间
-		 * @since 2022.07.06
-		 */
 		if (!class_exists($class)) {
-			$class = 'Wnd\\' . $class;
-		}
-
-		if(!class_exists($class)){
 			return ['status' => 0, 'msg' => __('无效的UI', 'wnd') . ':' . $class];
 		}
 
@@ -189,7 +190,7 @@ class Dispatcher_API {
 		 * @since 2019.10.01
 		 */
 		if (!class_exists($class)) {
-			return ['status' => 0, 'msg' => __('无效的Action', 'wnd')];
+			return ['status' => 0, 'msg' => __('无效的Action', 'wnd') . ':' . $class];
 		}
 
 		try {
