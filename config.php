@@ -45,14 +45,14 @@ define('DB_COLLATE', '');
  *
  * @since 2.6.0
  */
-define('AUTH_KEY',         'aaa-bbb-ccc-ddd');
-define('SECURE_AUTH_KEY',  'aaa-bbb-ccc-ddd');
-define('LOGGED_IN_KEY',    'aaa-bbb-ccc-ddd');
-define('NONCE_KEY',        'aaa-bbb-ccc-ddd');
-define('AUTH_SALT',        'aaa-bbb-ccc-ddd');
+define('AUTH_KEY', 'aaa-bbb-ccc-ddd');
+define('SECURE_AUTH_KEY', 'aaa-bbb-ccc-ddd');
+define('LOGGED_IN_KEY', 'aaa-bbb-ccc-ddd');
+define('NONCE_KEY', 'aaa-bbb-ccc-ddd');
+define('AUTH_SALT', 'aaa-bbb-ccc-ddd');
 define('SECURE_AUTH_SALT', 'aaa-bbb-ccc-ddd');
-define('LOGGED_IN_SALT',   'aaa-bbb-ccc-ddd');
-define('NONCE_SALT',       'aaa-bbb-ccc-ddd');
+define('LOGGED_IN_SALT', 'aaa-bbb-ccc-ddd');
+define('NONCE_SALT', 'aaa-bbb-ccc-ddd');
 
 /**#@-*/
 
@@ -70,5 +70,8 @@ define('ABSPATH', __DIR__ . DIRECTORY_SEPARATOR);
 define('DIR_NAME', basename(__DIR__));
 
 define('WPINC', 'src/wp-core');
+
+// 临时性代码：兼容插件
+define('WND_PATH', ABSPATH . 'src');
 
 require ABSPATH . 'load.php';

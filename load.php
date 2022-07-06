@@ -54,6 +54,15 @@ create_initial_taxonomies();
 // Post Type and Status
 create_initial_post_types();
 
+// Core Frontend（Wnd Frontend）
+require WND_PATH . '/function/inc-general.php'; //通用函数定义
+require WND_PATH . '/function/inc-meta.php'; //数组形式储存 meta、option
+require WND_PATH . '/function/inc-post.php'; //post相关自定义函数
+require WND_PATH . '/function/inc-user.php'; //user相关自定义函数
+require WND_PATH . '/function/inc-media.php'; //媒体文件处理函数
+require WND_PATH . '/function/inc-finance.php'; //财务
+require WND_PATH . '/function/tpl-general.php'; //通用模板
+
 // current theme functions.php
 if (file_exists(TEMPLATEPATH . '/functions.php')) {
 	require TEMPLATEPATH . '/functions.php';

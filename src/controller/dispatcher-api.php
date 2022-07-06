@@ -141,10 +141,14 @@ class Dispatcher_API {
 	 */
 	protected static function handle_module($class): array{
 		/**
-		 * 为实现惰性加载，废弃函数支持，改用类
-		 * @since 2019.10.01
+		 * 临时性代码：兼容插件命名空间
+		 * @since 2022.07.06
 		 */
 		if (!class_exists($class)) {
+			$class = 'Wnd\\' . $class;
+		}
+
+		if(!class_exists($class)){
 			return ['status' => 0, 'msg' => __('无效的UI', 'wnd') . ':' . $class];
 		}
 

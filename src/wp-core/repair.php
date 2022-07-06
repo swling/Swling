@@ -264,3 +264,24 @@ function get_current_blog_id() {
 function get_term_children() {
 	return [];
 }
+
+/********************************************* user */
+function is_user_logged_in() {
+	return true;
+}
+
+function wp_get_current_user() {
+	return WP_User::get_instance(1);
+}
+
+function wp_create_nonce() {
+	return 'wp_nonce_1016';
+}
+
+function wp_verify_nonce() {
+	return true;
+}
+
+function wp_get_attachment_url() {
+	return '';
+}

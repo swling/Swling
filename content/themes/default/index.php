@@ -17,7 +17,7 @@ endwhile;
 <h1><?php echo basename(__FILE__); ?></h1>
 
 <script>
-	wnd_ajax_modal("user/wnd_login_form", {
+	wnd_ajax_modal("user/wnd_profile_form", {
 		"haha": "1016",
 		"caobi": "好"
 	});
