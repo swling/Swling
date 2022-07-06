@@ -3,4 +3,4 @@
 /.*/
 /content/themes/*
 /content/extends/*
-# !/content/themes/default/
+!/content/themes/default/
