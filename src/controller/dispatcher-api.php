@@ -47,11 +47,11 @@ class Dispatcher_API {
 			'permission_callback' => '__return_true',
 			'route_rule'          => '(?P<action>(.*))',
 		],
-		'jsonget'  => [
+		'query'    => [
 			'methods'             => 'GET',
-			'callback'            => __CLASS__ . '::handle_jsonget',
+			'callback'            => __CLASS__ . '::handle_query',
 			'permission_callback' => '__return_true',
-			'route_rule'          => '(?P<jsonget>(.*))',
+			'route_rule'          => '(?P<query>(.*))',
 		],
 		'endpoint' => [
 			'methods'             => ['GET', 'POST'],

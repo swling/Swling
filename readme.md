@@ -1,5 +1,5 @@
-@date 2022.02.11
-@author Swling tangfou@gmail.com
+- @date 2022.02.11
+- @author Swling tangfou@gmail.com
 
 # WP Framework
 
@@ -37,7 +37,7 @@ Api 部分参考 wnd-frontend 插件
 - /{{api_prefix}}/action/
 - /{{api_prefix}}/module/
 - /{{api_prefix}}/endpoint/
-- /{{api_prefix}}/jsonget/
+- /{{api_prefix}}/query/
 
 ### 主题拓展操作节点
 - /{{api_prefix}}/theme/action/
@@ -48,11 +48,11 @@ Api 部分参考 wnd-frontend 插件
 ……
 
 ### 数据读取
-- /{{api_prefix}}/jsonget/
-- /{{api_prefix}}/jsonget/user/{{id_or_slug}}
-- /{{api_prefix}}/jsonget/post/{{id_or_slug}}
-- /{{api_prefix}}/jsonget/term/{{id_or_slug}}
-- /{{api_prefix}}/jsonget/comment/{{id_or_slug}}
+- /{{api_prefix}}/query/
+- /{{api_prefix}}/query/user/{{id_or_slug}}
+- /{{api_prefix}}/query/post/{{id_or_slug}}
+- /{{api_prefix}}/query/term/{{id_or_slug}}
+- /{{api_prefix}}/query/comment/{{id_or_slug}}
 
 ## 渲染 URL 路由
 - /user/ 			                用户
