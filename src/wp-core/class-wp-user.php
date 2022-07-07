@@ -60,6 +60,12 @@ class WP_User extends WP_Object {
 	public $user_level = 0;
 
 	/**
+	 * User description
+	 *
+	 */
+	public $description = '';
+
+	/**
 	 * get wpdb handler instance
 	 *
 	 */
@@ -75,8 +81,15 @@ class WP_User extends WP_Object {
 	 * @param WP_User|object $user User object.
 	 */
 	public function __construct(object $user) {
-		$this->user_level = static::get_user_level($user->ID);
-		parent::__construct($user);
+		$data = new stdClass;
+		foreach (get_object_vars($user) as $key => $value) {
+			$data->$key = $value;
+		}
+
+		$this->data        = $data;
+		$this->user_level  = static::get_user_level($user->ID);
+		$this->description = get_user_meta($user->ID, 'description');
+		$this->ID          = $user->ID;
 	}
 
 	public static function get_user_level(int $user_id): int {

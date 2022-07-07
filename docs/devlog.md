@@ -51,3 +51,5 @@ https://stackoverflow.com/questions/50992188/how-to-push-a-shallow-clone-to-a-ne
 - Insert/Update : ID（int） or 0
 - Delete :  ID (int) or 0
 
+## 后续
+将用户描述简介 description 从 user_meta 转入 users 表
