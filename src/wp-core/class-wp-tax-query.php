@@ -629,6 +629,10 @@ class WP_Tax_Query {
 				break;
 		}
 
+		if ( ! is_taxonomy_hierarchical( $query['taxonomy'] ) ) {
+			$args['number'] = count( $terms );
+		}
+
 		$term_query = new WP_Term_Query( $args );
 		$term_list  = $term_query->query();
 
