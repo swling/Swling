@@ -274,6 +274,10 @@ function wp_get_current_user() {
 	return WP_User::get_instance(1);
 }
 
+function get_current_user_id() {
+	return 1;
+}
+
 function wp_create_nonce() {
 	return 'wp_nonce_1016';
 }

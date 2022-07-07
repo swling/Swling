@@ -3,7 +3,6 @@ namespace Wnd\Action;
 
 use Wnd\Controller\Wnd_Defender_Action;
 use Wnd\Controller\Wnd_Request;
-use WP_REST_Request;
 
 /**
  * Ajax 操作基类
@@ -38,12 +37,6 @@ abstract class Wnd_Action {
 	protected $validate_captcha = true;
 
 	/**
-	 * Instance of WP REST Request
-	 * @since 0.9.36
-	 */
-	protected $wp_rest_request;
-
-	/**
 	 * Instance of Wnd_Request
 	 */
 	protected $request;
@@ -67,12 +60,11 @@ abstract class Wnd_Action {
 	 * - 核查权限许可
 	 * @since 0.8.66
 	 */
-	public function __construct(WP_REST_Request $wp_rest_request) {
-		$this->wp_rest_request = $wp_rest_request;
-		$this->request         = new Wnd_Request($wp_rest_request, $this->verify_sign, $this->validate_captcha);
-		$this->data            = $this->request->get_request();
-		$this->user            = wp_get_current_user();
-		$this->user_id         = $this->user->ID ?? 0;
+	public function __construct() {
+		$this->request = new Wnd_Request($this->verify_sign, $this->validate_captcha);
+		$this->data    = $this->request->get_request();
+		$this->user    = wp_get_current_user();
+		$this->user_id = $this->user->ID ?? 0;
 
 		$this->parse_data();
 		$this->check();

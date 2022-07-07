@@ -1,6 +1,7 @@
 <?php
 namespace Wnd\Controller;
 
+use Controller\Dispatcher_Api;
 use Exception;
 use Wnd\Getway\Wnd_Captcha;
 use Wnd\Utility\Wnd_Validator;
@@ -40,12 +41,6 @@ class Wnd_Request {
 	protected $request;
 
 	/**
-	 * WP_REST_Request 实例
-	 * @since 0.9.36
-	 */
-	protected $wp_rest_request;
-
-	/**
 	 * 签名请求 name
 	 */
 	public static $sign_name = '_wnd_sign';
@@ -63,12 +58,26 @@ class Wnd_Request {
 	/**
 	 * Construct
 	 */
-	public function __construct(WP_REST_Request $wp_rest_request, bool $verify_sign = true, bool $validate_captcha = true) {
-		$this->wp_rest_request  = $wp_rest_request;
+	public function __construct(bool $verify_sign = true, bool $validate_captcha = true) {
 		$this->verify_sign      = $verify_sign;
 		$this->validate_captcha = $validate_captcha;
 
 		$this->validate_request();
+	}
+
+	protected static function parse_request(): array{
+		if ('POST' == $_SERVER['REQUEST_METHOD']) {
+			/**
+			 * Json 请求无法直接通过 $_POST 获取
+			 * @link https://stackoverflow.com/questions/8893574/php-php-input-vs-post
+			 * @since 0.9.35
+			 */
+			$request = $_POST ?: json_decode(file_get_contents('php://input'), true);
+		} else {
+			$request = $_GET;
+		}
+
+		return $request ?: [];
 	}
 
 	/**
@@ -80,14 +89,7 @@ class Wnd_Request {
 	 * @return array 返回解析后的请求提交数据
 	 */
 	protected function validate_request(): array{
-		$method = $this->wp_rest_request->get_method();
-		$route  = $this->wp_rest_request->get_route();
-
-		if ('GET' == $method) {
-			$request = $this->wp_rest_request->get_query_params();
-		} else {
-			$request = $this->wp_rest_request->get_json_params() ?: $this->wp_rest_request->get_body_params();
-		}
+		$request = static::parse_request();
 		if (empty($request)) {
 			$this->request = [];
 			return $this->request;
@@ -118,6 +120,7 @@ class Wnd_Request {
 		 * 根据请求数据控制请求提交
 		 * @since 2019.12.22
 		 */
+		$route     = static::get_route();
 		$can_array = apply_filters('wnd_request_controller', ['status' => 1], $request, $route);
 		if (0 === $can_array['status']) {
 			throw new Exception($can_array['msg']);
@@ -126,6 +129,19 @@ class Wnd_Request {
 		$this->request = $request;
 
 		return $this->request;
+	}
+
+	/**
+	 * 获取当前 api 请求对应 route
+	 * @return string
+	 */
+	protected static function get_route(): string{
+		// Pretty permalinks on, and URL is under the API root.
+		$uri          = $_SERVER['REQUEST_URI'];
+		$api_prefix   = '/' . Dispatcher_Api::get_api_prefix();
+		$api_url_part = substr($uri, strlen(untrailingslashit($api_prefix)));
+
+		return parse_url($api_url_part, PHP_URL_PATH);
 	}
 
 	/**
