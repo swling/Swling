@@ -213,6 +213,179 @@ function get_user($user_id) {
 }
 
 /**
+ * Changes the current user by ID or name.
+ *
+ * Set $id to null and specify a name if you do not know a user's ID.
+ *
+ * Some WordPress functionality is based on the current user and not based on
+ * the signed in user. Therefore, it opens the ability to edit and perform
+ * actions on users who aren't signed in.
+ *
+ * @since 2.0.3
+ *
+ * @global WP_User $current_user The current user object which holds the user data.
+ *
+ * @param int|null $id   User ID.
+ * @param string   $name User's username.
+ * @return WP_User Current user User object.
+ */
+function wp_set_current_user($id, $name = '') {
+	global $current_user;
+
+	// If `$id` matches the current user, there is nothing to do.
+	if (isset($current_user)
+		&& ($current_user instanceof WP_User)
+		&& ($id == $current_user->ID)
+		&& (null !== $id)
+	) {
+		return $current_user;
+	}
+
+	$current_user = WP_User::get_instance($id);
+
+	setup_userdata($current_user->ID);
+
+	/**
+	 * Fires after the current user is set.
+	 *
+	 * @since 2.0.1
+	 */
+	do_action('set_current_user');
+
+	return $current_user;
+}
+
+/**
+ * Retrieves the current user object.
+ *
+ * Will set the current user, if the current user is not set. The current user
+ * will be set to the logged-in person. If no user is logged-in, then it will
+ * set the current user to 0, which is invalid and won't have any permissions.
+ *
+ * This function is used by the pluggable functions wp_get_current_user() and
+ * get_currentuserinfo(), the latter of which is deprecated but used for backward
+ * compatibility.
+ *
+ * @since 4.5.0
+ * @access private
+ *
+ * @see wp_get_current_user()
+ * @global WP_User $current_user Checks if the current user is set.
+ *
+ * @return WP_User Current WP_User instance.
+ */
+function _wp_get_current_user() {
+	global $current_user;
+
+	if (!empty($current_user)) {
+		if ($current_user instanceof WP_User) {
+			return $current_user;
+		}
+
+		// Upgrade stdClass to WP_User.
+		if (is_object($current_user) && isset($current_user->ID)) {
+			$cur_id       = $current_user->ID;
+			$current_user = null;
+			wp_set_current_user($cur_id);
+			return $current_user;
+		}
+
+		// $current_user has a junk value. Force to WP_User with ID 0.
+		$current_user = null;
+		wp_set_current_user(0);
+		return $current_user;
+	}
+
+	if (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) {
+		wp_set_current_user(0);
+		return $current_user;
+	}
+
+	/**
+	 * Filters the current user.
+	 *
+	 * The default filters use this to determine the current user from the
+	 * request's cookies, if available.
+	 *
+	 * Returning a value of false will effectively short-circuit setting
+	 * the current user.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @param int|false $user_id User ID if one has been determined, false otherwise.
+	 */
+	$user_id = apply_filters('determine_current_user', false);
+	if (!$user_id) {
+		wp_set_current_user(0);
+		return $current_user;
+	}
+
+	wp_set_current_user($user_id);
+
+	return $current_user;
+}
+
+/**
+ * Sets up global user vars.
+ *
+ * Used by wp_set_current_user() for back compat. Might be deprecated in the future.
+ *
+ * @since 2.0.4
+ *
+ * @global string  $user_login    The user username for logging in
+ * @global WP_User $userdata      User data.
+ * @global int     $user_level    The level of the user
+ * @global int     $user_ID       The ID of the user
+ * @global string  $user_email    The email address of the user
+ * @global string  $user_url      The url in the user's profile
+ * @global string  $user_identity The display name of the user
+ *
+ * @param int $for_user_id Optional. User ID to set up global data. Default 0.
+ */
+function setup_userdata($for_user_id = 0) {
+	global $user_login, $userdata, $user_level, $user_ID, $user_email, $user_url, $user_identity;
+
+	if (!$for_user_id) {
+		$for_user_id = get_current_user_id();
+	}
+	$user = get_userdata($for_user_id);
+
+	if (!$user) {
+		$user_ID       = 0;
+		$user_level    = 0;
+		$userdata      = null;
+		$user_login    = '';
+		$user_email    = '';
+		$user_url      = '';
+		$user_identity = '';
+		return;
+	}
+
+	$user_ID       = (int) $user->ID;
+	$user_level    = (int) WP_User::get_user_level($user->ID);
+	$userdata      = $user;
+	$user_login    = $user->user_login;
+	$user_email    = $user->user_email;
+	$user_url      = $user->user_url;
+	$user_identity = $user->display_name;
+}
+
+/**
+ * Gets the current user's ID.
+ *
+ * @since MU (3.0.0)
+ *
+ * @return int The current user's ID, or 0 if no user is logged in.
+ */
+function get_current_user_id() {
+	if (!function_exists('wp_get_current_user')) {
+		return 0;
+	}
+	$user = wp_get_current_user();
+	return (isset($user->ID) ? (int) $user->ID : 0);
+}
+
+/**
  * Retrieves the current session token from the logged_in cookie.
  *
  * @since 4.0.0

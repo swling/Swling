@@ -266,18 +266,6 @@ function get_term_children() {
 }
 
 /********************************************* user */
-function is_user_logged_in() {
-	return true;
-}
-
-function wp_get_current_user() {
-	return WP_User::get_instance(1);
-}
-
-function get_current_user_id() {
-	return 1;
-}
-
 function wp_get_attachment_url() {
 	return '';
 }
@@ -289,4 +277,8 @@ function get_site_option($option) {
 
 function update_site_option($option, $value) {
 	return update_option($option, $value);
+}
+
+function wp_doing_ajax() {
+	return wnd_is_rest_request();
 }

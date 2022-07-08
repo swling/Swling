@@ -99,4 +99,16 @@ class WP_User extends WP_Object {
 	public static function update_user_level(int $user_id, int $user_level): int {
 		return update_user_meta($user_id, 'wp_user_level', $user_level);
 	}
+
+	/**
+	 * Determines whether the user exists in the database.
+	 *
+	 * @since 3.4.0
+	 *
+	 * @return bool True if user exists in the database, false if not.
+	 */
+	public function exists() {
+		return !empty($this->ID);
+	}
+
 }
