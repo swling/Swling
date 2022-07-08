@@ -21,7 +21,8 @@ abstract class WP_Object {
 		$object  = $handler->get($object_id);
 
 		if (!$object) {
-			return $object;
+			$object = new stdClass;
+			return new static($object);
 		}
 
 		return new static($object);
@@ -35,6 +36,12 @@ abstract class WP_Object {
 	 * @param WP_Object|object $object WP_Object
 	 */
 	public function __construct(object $object) {
+		// empty data：such as $object_id = 0;
+		$data = get_object_vars($object);
+		if (!$data) {
+			return;
+		}
+
 		foreach (get_object_vars($object) as $key => $value) {
 			$this->$key = $value;
 		}

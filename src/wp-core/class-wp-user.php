@@ -81,6 +81,12 @@ class WP_User extends WP_Object {
 	 * @param WP_User|object $user User object.
 	 */
 	public function __construct(object $user) {
+		// invalid user
+		$user_data = get_object_vars($user);
+		if (!$user_data) {
+			return;
+		}
+
 		$data = new stdClass;
 		foreach (get_object_vars($user) as $key => $value) {
 			$data->$key = $value;
