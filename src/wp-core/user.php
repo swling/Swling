@@ -193,3 +193,15 @@ function get_userdata($user_id) {
 function get_user($user_id) {
 	return get_user_by('ID', $user_id);
 }
+
+/**
+ * Retrieves the current session token from the logged_in cookie.
+ *
+ * @since 4.0.0
+ *
+ * @return string Token.
+ */
+function wp_get_session_token() {
+	$cookie = wp_parse_auth_cookie('', 'logged_in');
+	return !empty($cookie['token']) ? $cookie['token'] : '';
+}

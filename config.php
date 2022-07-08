@@ -4,7 +4,10 @@ ini_set('display_errors', 'On');
 
 // ######################################### 站点配置
 
-// site url
+/**
+ * 适配域名
+ */
+define('WP_HOME', 'http://' . $_SERVER['HTTP_HOST']);
 define('WP_SITEURL', 'http://' . $_SERVER['HTTP_HOST']);
 
 // current theme

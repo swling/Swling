@@ -278,14 +278,15 @@ function get_current_user_id() {
 	return 1;
 }
 
-function wp_create_nonce() {
-	return 'wp_nonce_1016';
-}
-
-function wp_verify_nonce() {
-	return true;
-}
-
 function wp_get_attachment_url() {
 	return '';
+}
+
+// option
+function get_site_option($option) {
+	return get_option($option);
+}
+
+function update_site_option($option, $value) {
+	return update_option($option, $value);
 }

@@ -27,6 +27,9 @@ require ABSPATH . WPINC . '/script.php';
 require ABSPATH . WPINC . '/styles.php';
 require ABSPATH . WPINC . '/link-template.php';
 
+// pluggable
+require ABSPATH . WPINC . '/pluggable.php';
+
 // 计时
 timer_start();
 
