@@ -154,8 +154,26 @@ function wp_delete_user($user_id, $reassign = 0) {
 function get_user_by($field, $value) {
 	global $current_user;
 
+	switch ($field) {
+		case 'id':
+			$db_field = 'ID';
+			break;
+		case 'slug':
+			$db_field = 'user_nicename';
+			break;
+		case 'email':
+			$db_field = 'user_email';
+			break;
+		case 'login':
+			// $value    = sanitize_user($value);
+			$db_field = 'user_login';
+			break;
+		default:
+			$db_field = $field;
+	}
+
 	$handler  = WP_Core\Model\WPDB_Handler_User::get_instance();
-	$userdata = $handler->get_by($field, $value);
+	$userdata = $handler->get_by($db_field, $value);
 
 	if (!$userdata) {
 		return false;
@@ -167,7 +185,7 @@ function get_user_by($field, $value) {
 
 	$user = new WP_User($userdata);
 
-	return $user;
+	return $user->data;
 }
 
 /**
