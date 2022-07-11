@@ -167,7 +167,16 @@ function plugins_url($path = '', $plugin = '') {
  * @param bool        $leavename Optional. Whether to keep post name or page name. Default false.
  * @return string The permalink URL.
  */
-function get_permalink(WP_Post $post, $leavename = false): string {
+function get_permalink($post = 0, $leavename = false): string {
+	if (!$post) {
+		global $post;
+	} else {
+		$post = is_object($post) ?: get_post($post);
+	}
+
+	if (!$post) {
+		return '';
+	}
 
 	if ('page' == $post->post_type) {
 		$path = $post->post_name;

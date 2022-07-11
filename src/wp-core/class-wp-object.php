@@ -42,7 +42,7 @@ abstract class WP_Object {
 			return;
 		}
 
-		foreach (get_object_vars($object) as $key => $value) {
+		foreach ($data as $key => $value) {
 			$this->$key = $value;
 		}
 	}
