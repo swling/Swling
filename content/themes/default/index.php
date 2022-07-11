@@ -8,9 +8,9 @@ print_r(get_queried_object());
 // global $wp_query;
 // print_r($wp_query);
 
-while (have_posts()): the_post();
+while (have_posts()) : the_post();
 	global $post;
-	echo $post->post_title . '<br/>';
+	echo '<a href="' . get_permalink() . '">' . $post->post_title . '</a><br/>';
 endwhile;
 
 ?>

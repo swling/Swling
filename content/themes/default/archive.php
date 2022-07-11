@@ -9,8 +9,8 @@ get_header();
 
 while (have_posts()) : the_post();
 	global $post;
-	echo $post->post_title . '<br/>';
-	print_r(wp_get_object_terms($post->ID, 'post_tag'));
+	echo '<a href="' . get_permalink() . '">' . $post->post_title . '</a><br/>';
+// print_r(wp_get_object_terms($post->ID, 'post_tag'));
 endwhile;
 ?>
 <?php
