@@ -235,7 +235,7 @@ function term_exists(string $term, string $taxonomy = '', int $parent = 0): bool
 	// Term Query slug
 	$args['slug'] = sanitize_title($term);
 	$query        = new WP_Term_Query($args);
-	$exists       = count($query->get_terms());
+	$exists       = count($query->get_results());
 	if ($exists) {
 		return $exists;
 	}
@@ -244,7 +244,7 @@ function term_exists(string $term, string $taxonomy = '', int $parent = 0): bool
 	unset($args['slug']);
 	$args['name'] = trim(wp_unslash($term));
 	$query        = new WP_Term_Query($args);
-	return count($query->get_terms());
+	return count($query->get_results());
 }
 
 /**
@@ -353,6 +353,26 @@ function wp_get_object_terms(int $object_id, string $taxonomy, array $args = [])
 	} catch (Exception $e) {
 		return new WP_Error(__FUNCTION__, $e->getMessage());
 	}
+}
+
+/**
+ * Retrieves the terms of the taxonomy that are attached to the post.
+ *
+ * @since 2.5.0
+ *
+ * @param int         $post_id     Post ID.
+ * @param string      $taxonomy Taxonomy name.
+ * @return WP_Term[]|false|WP_Error Array of WP_Term objects on success, false if there are no terms
+ *                                  or the post does not exist, WP_Error on failure.
+ */
+function get_the_terms(int $post_id, string $taxonomy) {
+	$post = get_post($post_id);
+	if (!$post) {
+		return false;
+	}
+
+	$terms = wp_get_object_terms($post->ID, $taxonomy);
+	return $terms;
 }
 
 /**
