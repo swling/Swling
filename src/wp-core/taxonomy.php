@@ -179,6 +179,10 @@ function create_initial_taxonomies() {
 				'delete_terms' => 'delete_categories',
 				'assign_terms' => 'assign_categories',
 			],
+			'labels'            => [
+				'name'          => _x('Categories', 'taxonomy general name'),
+				'singular_name' => _x('Category', 'taxonomy singular name'),
+			],
 		]
 	);
 
@@ -197,6 +201,10 @@ function create_initial_taxonomies() {
 				'edit_terms'   => 'edit_post_tags',
 				'delete_terms' => 'delete_post_tags',
 				'assign_terms' => 'assign_post_tags',
+			],
+			'labels'            => [
+				'name'          => _x('Tags', 'taxonomy general name'),
+				'singular_name' => _x('Tag', 'taxonomy singular name'),
 			],
 		]
 	);

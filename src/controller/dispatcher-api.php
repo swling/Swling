@@ -81,6 +81,9 @@ class Dispatcher_API {
 	];
 
 	public function __construct(array $url_info) {
+		// define  REST_REQUEST
+		define('REST_REQUEST', true);
+
 		$path = $url_info['path'];
 
 		$handler   = str_replace(static::get_api_prefix() . '/', '', $path);

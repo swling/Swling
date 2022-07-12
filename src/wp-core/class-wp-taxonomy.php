@@ -251,7 +251,7 @@ final class WP_Taxonomy {
 			$this->$property_name = $property_value;
 		}
 
-		// $this->labels = get_taxonomy_labels( $this );
-		$this->label = $this->name;
+		$this->labels = (object) $args['labels'];
+		$this->label  = $this->name;
 	}
 }

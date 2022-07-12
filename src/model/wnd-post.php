@@ -56,7 +56,7 @@ abstract class Wnd_Post {
 		$query_array = [
 			'post_status'    => 'auto-draft',
 			'post_type'      => $post_type,
-			'author'         => $user_id,
+			'post_author'    => $user_id,
 			'orderby'        => 'ID',
 			'order'          => 'ASC',
 			'cache_results'  => false,

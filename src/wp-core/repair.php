@@ -282,3 +282,11 @@ function update_site_option($option, $value) {
 function wp_doing_ajax() {
 	return wnd_is_rest_request();
 }
+
+function current_user_can() {
+	return true;
+}
+
+function is_super_admin() {
+	return true;
+}
