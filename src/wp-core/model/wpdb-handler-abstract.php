@@ -68,7 +68,7 @@ abstract class WPDB_Handler_Abstract {
 	 */
 	public function insert(array $data): int {
 		// update
-		if (isset($data[$this->primary_id_column])) {
+		if (isset($data[$this->primary_id_column]) and $data[$this->primary_id_column]) {
 			return $this->update($data);
 		}
 

@@ -315,7 +315,7 @@ abstract class Wnd_Post {
 
 		$args = [
 			'order'       => 'DESC',
-			'orderby'     => 'date ID',
+			'orderby'     => 'ID',
 			'post_parent' => $post_id,
 			'post_type'   => get_post_type($post_id),
 			'post_status' => 'any',
