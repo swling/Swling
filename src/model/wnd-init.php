@@ -2,7 +2,6 @@
 namespace Wnd\Model;
 
 use Wnd\Admin\Wnd_Admin_Optimization;
-use Wnd\Admin\Wnd_Admin_Upgrade;
 use Wnd\Admin\Wnd_Menus;
 use Wnd\Controller\Wnd_Controller;
 use Wnd\Hook\Wnd_Hook;
@@ -13,7 +12,6 @@ use Wnd\Utility\Wnd_language;
 use Wnd\Utility\Wnd_Optimization;
 use Wnd\Utility\Wnd_OSS_Handler;
 use Wnd\Utility\Wnd_Singleton_Trait;
-use Wnd\Utility\Wnd_Upgrader_Plugin_This;
 
 /**
  * 初始化 单例模式
@@ -64,9 +62,6 @@ class Wnd_Init {
 			// 配置菜单
 			new Wnd_Menus();
 
-			// 检查更新
-			new Wnd_Upgrader_Plugin_This();
-
 			// 优化大数据库站点的 WP 后台
 			if (wnd_get_config('enable_admin_optimization')) {
 				Wnd_Admin_Optimization::get_instance();
@@ -76,46 +71,17 @@ class Wnd_Init {
 
 	// 加载函数封装文件
 	private static function load_function_file() {
-		require WND_PATH . '/includes/function/inc-general.php'; //通用函数定义
-		require WND_PATH . '/includes/function/inc-meta.php'; //数组形式储存 meta、option
-		require WND_PATH . '/includes/function/inc-post.php'; //post相关自定义函数
-		require WND_PATH . '/includes/function/inc-user.php'; //user相关自定义函数
-		require WND_PATH . '/includes/function/inc-media.php'; //媒体文件处理函数
-		require WND_PATH . '/includes/function/inc-finance.php'; //财务
-		require WND_PATH . '/includes/function/tpl-general.php'; //通用模板
+		require WND_PATH . '/function/inc-general.php'; //通用函数定义
+		require WND_PATH . '/function/inc-meta.php'; //数组形式储存 meta、option
+		require WND_PATH . '/function/inc-post.php'; //post相关自定义函数
+		require WND_PATH . '/function/inc-user.php'; //user相关自定义函数
+		require WND_PATH . '/function/inc-media.php'; //媒体文件处理函数
+		require WND_PATH . '/function/inc-finance.php'; //财务
+		require WND_PATH . '/function/tpl-general.php'; //通用模板
 	}
 
 	// Init
 	private static function init() {
-		/**
-		 * 插件安装卸载选项
-		 * @since 初始化
-		 */
-		register_activation_hook(WND_PLUGIN_FILE, 'Wnd\Admin\Wnd_Admin_Install::install');
-		register_deactivation_hook(WND_PLUGIN_FILE, 'Wnd\Admin\Wnd_Admin_Install::uninstall');
-
-		/**
-		 * 插件更新触发升级操作
-		 * @since 0.9.2
-		 */
-		add_action('upgrader_process_complete', function ($upgrader_object, $options) {
-			if ($options['action'] != 'update') {
-				return false;
-			}
-
-			if ($options['type'] != 'plugin') {
-				return false;
-			}
-
-			$current_plugin_path_name = plugin_basename(WND_PLUGIN_FILE);
-			foreach ($options['plugins'] as $each_plugin) {
-				if ($each_plugin == $current_plugin_path_name) {
-					Wnd_Admin_Upgrade::upgrade();
-					break;
-				}
-			}
-		}, 10, 2);
-
 		/**
 		 * 访问后台时候，触发执行升级及清理动作
 		 * @since 2019.04.16

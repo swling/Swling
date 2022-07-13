@@ -58,15 +58,22 @@ create_initial_taxonomies();
 create_initial_post_types();
 
 // Core Frontend（Wnd Frontend）
-require WND_PATH . '/function/inc-general.php'; //通用函数定义
-require WND_PATH . '/function/inc-meta.php'; //数组形式储存 meta、option
-require WND_PATH . '/function/inc-post.php'; //post相关自定义函数
-require WND_PATH . '/function/inc-user.php'; //user相关自定义函数
-require WND_PATH . '/function/inc-media.php'; //媒体文件处理函数
-require WND_PATH . '/function/inc-finance.php'; //财务
-require WND_PATH . '/function/tpl-general.php'; //通用模板
+Wnd\Model\Wnd_Init::get_instance();
 
 // current theme functions.php
 if (file_exists(TEMPLATEPATH . '/functions.php')) {
 	require TEMPLATEPATH . '/functions.php';
 }
+
+/**
+ * Fires after WordPress has finished loading but before any headers are sent.
+ *
+ * Most of WP is loaded at this stage, and the user is authenticated. WP continues
+ * to load on the {@see 'init'} hook that follows (e.g. widgets), and many plugins instantiate
+ * themselves on it for all sorts of reasons (e.g. they need a user, a taxonomy, etc.).
+ *
+ * If you wish to plug an action once WP is loaded, use the {@see 'wp_loaded'} hook below.
+ *
+ * @since 1.5.0
+ */
+do_action('init');

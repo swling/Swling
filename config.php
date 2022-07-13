@@ -76,5 +76,6 @@ define('WPINC', 'src/wp-core');
 
 // 临时性代码：兼容插件
 define('WND_PATH', ABSPATH . 'src');
+define('WND_LANG_KEY', 'lang');
 
 require ABSPATH . 'load.php';
