@@ -938,3 +938,35 @@ function wp_set_post_terms($post_id = 0, $tags = '', $taxonomy = 'post_tag', $ap
 
 	return wp_set_object_terms($post_id, $tags, $taxonomy, $append);
 }
+
+/**
+ * Retrieve the post status based on the post ID.
+ *
+ * If the post ID is of an attachment, then the parent post status will be given
+ * instead.
+ *
+ * @since 2.0.0
+ *
+ * @param int|WP_Post $post Optional. Post ID or post object. Defaults to global $post.
+ * @return string|false Post status on success, false on failure.
+ */
+function get_post_status($post = null) {
+	$post = get_post($post);
+
+	if (!is_object($post)) {
+		return false;
+	}
+
+	$post_status = $post->post_status;
+
+	/**
+	 * Filters the post status.
+	 *
+	 * @since 4.4.0
+	 * @since 5.7.0 The attachment post type is now passed through this filter.
+	 *
+	 * @param string  $post_status The post status.
+	 * @param WP_Post $post        The post object.
+	 */
+	return apply_filters('get_post_status', $post_status, $post);
+}
