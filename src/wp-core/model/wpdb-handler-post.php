@@ -17,6 +17,10 @@ class WPDB_Handler_Post extends WPDB_Row {
 
 	use Singleton_Trait;
 
+	private function __construct() {
+		parent::__construct();
+	}
+
 	protected function check_insert_data(array $data): array{
 		$data = $this->common_check($data);
 

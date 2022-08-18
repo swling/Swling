@@ -17,6 +17,10 @@ class WPDB_Handler_User extends WPDB_Row {
 
 	use Singleton_Trait;
 
+	private function __construct() {
+		parent::__construct();
+	}
+
 	protected function check_insert_data(array $data): array{
 		static::common_check($data);
 

@@ -18,6 +18,10 @@ class WPDB_Handler_Term extends WPDB_Row {
 
 	use Singleton_Trait;
 
+	private function __construct() {
+		parent::__construct();
+	}
+
 	protected function check_insert_data(array $data): array{
 		// Term common check
 		static::common_check($data);

@@ -16,6 +16,10 @@ class WPDB_Handler_Comment extends WPDB_Row {
 
 	use Singleton_Trait;
 
+	private function __construct() {
+		parent::__construct();
+	}
+
 	protected function check_insert_data(array $data): array{
 		return $data;
 	}
