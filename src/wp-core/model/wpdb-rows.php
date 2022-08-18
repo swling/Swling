@@ -36,8 +36,9 @@ abstract class WPDB_Rows {
 
 	/**
 	 * Constructer
+	 * 设置为 protected 权限旨在方便子类以单例模式实例化
 	 */
-	public function __construct() {
+	protected function __construct() {
 		$this->instance_wpdb();
 		$this->instance_wpdb_row();
 	}
@@ -142,6 +143,7 @@ abstract class WPDB_Rows {
 	 */
 	public function add_row(int $object_id, array $data): int{
 		$data[$this->object_id_column] = $object_id;
+		$data                          = $this->check_insert_data($data);
 		$id                            = $this->wpdb_row->insert($data);
 		if ($id) {
 			$this->delete_object_rows_cache($object_id);
@@ -161,6 +163,7 @@ abstract class WPDB_Rows {
 		}
 
 		$data = array_merge((array) $_data, $data);
+		$data = $this->check_update_data($data);
 		$id   = $this->wpdb_row->update($data);
 		if ($id) {
 			$this->delete_object_rows_cache($object_id);
@@ -191,6 +194,16 @@ abstract class WPDB_Rows {
 		}
 		return $primary_id;
 	}
+
+	/**
+	 * check insert data
+	 */
+	abstract protected function check_insert_data(array $data): array;
+
+	/**
+	 * check update data
+	 */
+	abstract protected function check_update_data(array $data): array;
 
 	/**
 	 * get cache of all rows data for specific object id
