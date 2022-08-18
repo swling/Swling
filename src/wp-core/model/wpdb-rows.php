@@ -136,6 +136,7 @@ abstract class WPDB_Rows {
 
 				if ($row->$field != $value) {
 					$match = false;
+					continue;
 				}
 			}
 
