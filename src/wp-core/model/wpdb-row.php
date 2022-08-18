@@ -46,14 +46,10 @@ class WPDB_Row {
 	 * Constructer
 	 *
 	 * Init
-	 *
-	 * 定义为 protected 旨在方便子类继承构造函数并设置为单例模式
-	 * 不可直接在父类中设置单例特性，因为继承自同一父类的静态属性 $instance 将同步影响所有其他子类
-	 * @link https://wndwp.com/archives/819
 	 */
-	protected function __construct(array $args = []) {
+	public function __construct(array $args = []) {
 		foreach ($args as $key => $value) {
-			if (!isset($this->$value)) {
+			if (!property_exists($this, $key)) {
 				continue;
 			}
 
@@ -265,7 +261,7 @@ class WPDB_Row {
 	/**
 	 * clean table cache When a row is deleted or updated
 	 */
-	protected function clean_row_cache(object $old_data) {
+	public function clean_row_cache(object $old_data) {
 		foreach ($old_data as $field => $value) {
 			$cache_group = $this->generate_filed_cache_group($field);
 			if (false !== $cache_group) {

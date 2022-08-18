@@ -17,7 +17,7 @@ use WP_Core\Utility\Singleton_Trait;
  * 故此设置 $this->object_cache_fields = [$this->primary_id_column] 仅缓存主键，用作更新删除等操作;
  * !与 WordPress 不同，本框架同一 object id 不支持多个重名 meta key
  */
-class WPDB_Handler_Meta extends WPDB_Handler_Rows {
+class WPDB_Handler_Meta extends WPDB_Rows {
 
 	protected $table_name;
 	protected $object_name;
@@ -49,8 +49,8 @@ class WPDB_Handler_Meta extends WPDB_Handler_Rows {
 		$this->required_columns    = [$this->object_id_column, 'meta_key', 'meta_value'];
 		$this->object_cache_fields = [$this->primary_id_column];
 
-		$table_name  = $this->table_name;
-		$this->table = $this->wpdb->$table_name;
+		$this->instance_wpdb();
+		$this->instance_wpdb_row();
 	}
 
 	/**

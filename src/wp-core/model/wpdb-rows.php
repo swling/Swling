@@ -1,6 +1,8 @@
 <?php
 namespace WP_Core\Model;
 
+use WP_Core\Model\WPDB_Row;
+
 /**
  * # Rows Handler
  * 同一张表中，具有共同属性的多行数据操作基类
@@ -13,10 +15,60 @@ namespace WP_Core\Model;
  *
  * @since 2022.06.11
  */
-abstract class WPDB_Handler_Rows extends WPDB_Row {
+abstract class WPDB_Rows {
+
+	// 单行数据属性
+	protected $table_name;
+	protected $object_name;
+	protected $primary_id_column;
+	protected $required_columns    = [];
+	protected $object_cache_fields = [];
 
 	// 共同属性 id 字段名
 	protected $object_id_column;
+
+	// 数据表基本属性
+	protected $wpdb;
+	protected $table;
+
+	// 单行操作实例
+	protected $wpdb_row;
+
+	/**
+	 * Constructer
+	 */
+	public function __construct() {
+		$this->instance_wpdb();
+		$this->instance_wpdb_row();
+	}
+
+	/**
+	 * 定义数据表基本信息
+	 */
+	protected function instance_wpdb() {
+		global $wpdb;
+		$this->wpdb = $wpdb;
+
+		if ($this->table_name) {
+			$table_name  = $this->table_name;
+			$this->table = $wpdb->$table_name;
+		}
+	}
+
+	/**
+	 * 实例化单行操作对象
+	 */
+	protected function instance_wpdb_row() {
+		$args = [
+			'table_name'          => $this->table_name,
+			'object_name'         => $this->object_name,
+			'primary_id_column'   => $this->primary_id_column,
+			'required_columns'    => $this->required_columns,
+			'object_cache_fields' => $this->object_cache_fields,
+		];
+
+		$this->wpdb_row = new WPDB_Row($args);
+	}
 
 	/**
 	 * Retrieves all raws value for the specified object.
@@ -55,7 +107,7 @@ abstract class WPDB_Handler_Rows extends WPDB_Row {
 		// 依次删除每一行数据对应的缓存
 		$old_data = $this->get_rows($object_id);
 		foreach ($old_data as $_data) {
-			$this->clean_row_cache($_data);
+			$this->wpdb_row->clean_row_cache($_data);
 		}
 
 		return $action;
@@ -90,7 +142,7 @@ abstract class WPDB_Handler_Rows extends WPDB_Row {
 	 */
 	public function add_row(int $object_id, array $data): int{
 		$data[$this->object_id_column] = $object_id;
-		$id                            = $this->insert($data);
+		$id                            = $this->wpdb_row->insert($data);
 		if ($id) {
 			$this->delete_object_rows_cache($object_id);
 		}
@@ -109,7 +161,7 @@ abstract class WPDB_Handler_Rows extends WPDB_Row {
 		}
 
 		$data = array_merge((array) $_data, $data);
-		$id   = $this->update($data);
+		$id   = $this->wpdb_row->update($data);
 		if ($id) {
 			$this->delete_object_rows_cache($object_id);
 		}
@@ -133,7 +185,7 @@ abstract class WPDB_Handler_Rows extends WPDB_Row {
 		$primary_id_column = $this->primary_id_column;
 		$primary_id        = $data->$primary_id_column;
 
-		$primary_id = $this->delete($primary_id);
+		$primary_id = $this->wpdb_row->delete($primary_id);
 		if ($primary_id) {
 			$this->delete_object_rows_cache($object_id);
 		}
