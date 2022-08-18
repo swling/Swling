@@ -118,7 +118,7 @@ abstract class WPDB_Rows {
 	 * get single row data object by object ID and row key
 	 *
 	 * @param $object_id int
-	 * @param $where     array  example: ['field' => 'value']
+	 * @param $where     array  example: ['field1' => 'value1', 'field2' => 'value2',]
 	 *
 	 * @return object|false
 	 */
@@ -126,12 +126,22 @@ abstract class WPDB_Rows {
 		$data = $this->get_rows($object_id);
 		foreach ($data as $row) {
 
+			// $where 数组中任一字段不匹配，则表明该行数据不匹配
+			$match = true;
 			foreach ($where as $field => $value) {
-				if ($value == $row->$field) {
-					return $row;
+				// 查询字段中包含不再数据表的字段
+				if (!isset($row->$field)) {
+					return false;
+				}
+
+				if ($row->$field != $value) {
+					$match = false;
 				}
 			}
 
+			if ($match) {
+				return $row;
+			}
 		}
 
 		return false;
