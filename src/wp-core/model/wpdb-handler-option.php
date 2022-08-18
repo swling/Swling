@@ -6,7 +6,7 @@ use WP_Core\Utility\Singleton_Trait;
 /**
  *
  */
-class WPDB_Handler_Option extends WPDB_Handler_Abstract {
+class WPDB_Handler_Option extends WPDB_Row {
 
 	protected $table_name          = 'options';
 	protected $object_name         = 'option';

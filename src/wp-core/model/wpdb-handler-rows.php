@@ -13,7 +13,7 @@ namespace WP_Core\Model;
  *
  * @since 2022.06.11
  */
-abstract class WPDB_Handler_Rows extends WPDB_Handler_Abstract {
+abstract class WPDB_Handler_Rows extends WPDB_Row {
 
 	// 共同属性 id 字段名
 	protected $object_id_column;

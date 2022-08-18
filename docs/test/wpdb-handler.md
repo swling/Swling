@@ -9,11 +9,11 @@ add_action('before_delete_post', function ($where) {
 	exit;
 });
 
-$wpdb_handler = Model\WPDB_Handler_Post::get_instance();
+$wpdb_handler =WP_Core\Model\WPDB_Handler_Post::get_instance();
 echo $wpdb_handler->insert(['post_title' => time()]);
-echo $wpdb_handler->update(['post_title' => '修改0'], ['ID' => '1']);
-print_r($wpdb_handler->get(['ID' => '1']));
-print_r($wpdb_handler->delete(['ID' => '1']));
+echo $wpdb_handler->update(['post_title' => '修改0', 'ID' => '1']);
+print_r($wpdb_handler->get( 1 );
+print_r($wpdb_handler->delete( 1 );
 
 add_filter('insert_user_data', function (array $data): array{
 	$data['user_pass'] = '过滤写入数据';
@@ -25,11 +25,11 @@ add_action('before_delete_user', function ($where) {
 	exit;
 });
 
-$wpdb_handler = Model\WPDB_Handler_User::get_instance();
+$wpdb_handler =WP_Core\Model\WPDB_Handler_User::get_instance();
 echo $wpdb_handler->insert(['user_login' => 'admin', 'display_name' => time()]);
-echo $wpdb_handler->update(['display_name' => '修改'], ['ID' => '1']);
-print_r($wpdb_handler->get(['ID' => 1]));
-print_r($wpdb_handler->delete(['ID' => 1]));
+echo $wpdb_handler->update(['display_name' => '修改', 'ID' => '1']);
+print_r($wpdb_handler->get( 1 );
+print_r($wpdb_handler->delete( 1 );
 ```
 
 ## WP_Query

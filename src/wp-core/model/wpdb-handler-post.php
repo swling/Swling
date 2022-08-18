@@ -7,7 +7,7 @@ use WP_Core\Utility\Singleton_Trait;
 /**
  *
  */
-class WPDB_Handler_Post extends WPDB_Handler_Abstract {
+class WPDB_Handler_Post extends WPDB_Row {
 
 	protected $table_name          = 'posts';
 	protected $object_name         = 'post';

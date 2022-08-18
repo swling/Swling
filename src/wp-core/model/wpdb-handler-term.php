@@ -8,7 +8,7 @@ use WP_Core\Utility\Singleton_Trait;
  * @see wpdb->terms
  *
  */
-class WPDB_Handler_Term extends WPDB_Handler_Abstract {
+class WPDB_Handler_Term extends WPDB_Row {
 
 	protected $table_name          = 'terms';
 	protected $object_name         = 'term';

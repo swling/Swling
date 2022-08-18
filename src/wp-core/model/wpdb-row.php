@@ -4,7 +4,7 @@ namespace WP_Core\Model;
 use Exception;
 
 /**
- * # 单行数据表操作抽象基类
+ * # 单行数据表操作基类
  * - “增删改”操作仅针对单行
  * - 仅支持单行单字段查询
  * - 在 wpdb 的基础上统一添加 Hook
@@ -25,7 +25,7 @@ use Exception;
  * - Delete :  ID (int) or 0
  *
  */
-abstract class WPDB_Handler_Abstract {
+class WPDB_Row {
 
 	protected $table_name;
 	protected $object_name;
@@ -51,7 +51,15 @@ abstract class WPDB_Handler_Abstract {
 	 * 不可直接在父类中设置单例特性，因为继承自同一父类的静态属性 $instance 将同步影响所有其他子类
 	 * @link https://wndwp.com/archives/819
 	 */
-	protected function __construct() {
+	protected function __construct(array $args = []) {
+		foreach ($args as $key => $value) {
+			if (!isset($this->$value)) {
+				continue;
+			}
+
+			$this->$key = $value;
+		}
+
 		global $wpdb;
 		$this->wpdb = $wpdb;
 
@@ -202,7 +210,9 @@ abstract class WPDB_Handler_Abstract {
 	/**
 	 * check insert data
 	 */
-	abstract protected function check_insert_data(array $data): array;
+	protected function check_insert_data(array $data): array{
+		return $data;
+	}
 
 	/**
 	 * check update data
@@ -224,7 +234,9 @@ abstract class WPDB_Handler_Abstract {
 	/**
 	 * check update data
 	 */
-	abstract protected function check_update_data(array $data): array;
+	protected function check_update_data(array $data): array{
+		return $data;
+	}
 
 	/**
 	 * maybe get data from cache

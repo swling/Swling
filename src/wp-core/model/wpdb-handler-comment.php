@@ -6,7 +6,7 @@ use WP_Core\Utility\Singleton_Trait;
 /**
  *
  */
-class WPDB_Handler_Comment extends WPDB_Handler_Abstract {
+class WPDB_Handler_Comment extends WPDB_Row {
 
 	protected $table_name          = 'comments';
 	protected $object_name         = 'comment';

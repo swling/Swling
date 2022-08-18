@@ -7,7 +7,7 @@ use WP_Core\Utility\Singleton_Trait;
 /**
  *
  */
-class WPDB_Handler_User extends WPDB_Handler_Abstract {
+class WPDB_Handler_User extends WPDB_Row {
 
 	protected $table_name          = 'users';
 	protected $object_name         = 'user';
