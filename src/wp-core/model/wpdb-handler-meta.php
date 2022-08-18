@@ -49,8 +49,7 @@ class WPDB_Handler_Meta extends WPDB_Rows {
 		$this->required_columns    = [$this->object_id_column, 'meta_key', 'meta_value'];
 		$this->object_cache_fields = [$this->primary_id_column];
 
-		$this->instance_wpdb();
-		$this->instance_wpdb_row();
+		parent::__construct();
 	}
 
 	/**
