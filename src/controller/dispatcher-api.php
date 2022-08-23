@@ -197,8 +197,10 @@ class Dispatcher_API {
 		}
 
 		try {
-			$action = new $class();
-			return $action->do_action();
+			$action      = new $class();
+			$res         = $action->do_action();
+			$res['time'] = timer_stop();
+			return $res;
 		} catch (Exception $e) {
 			return ['status' => $e->getCode(), 'msg' => $e->getMessage()];
 		}
