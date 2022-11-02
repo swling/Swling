@@ -2,8 +2,8 @@
 namespace Wnd\Module\User;
 
 use Exception;
-use Wnd\Module\Wnd_Module_Html;
 use Wnd\Query\Wnd_Menus;
+use Wnd\Module\Wnd_Module_Html;
 
 /**
  * 封装前端中心页面
