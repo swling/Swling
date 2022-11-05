@@ -1,6 +1,6 @@
 <?php
 /**
- * WordPress database access abstraction class
+ * WordPress database access abstraction class.
  *
  * Original code from {@link http://php.justinvincent.com Justin Vincent (justin@visunet.ie)}
  *
@@ -51,6 +51,7 @@ define( 'ARRAY_N', 'ARRAY_N' );
  *
  * @since 0.71
  */
+#[AllowDynamicProperties]
 class wpdb {
 
 	/**
@@ -339,9 +340,18 @@ class wpdb {
 		'signups',
 		'site',
 		'sitemeta',
-		'sitecategories',
 		'registration_log',
 	);
+
+	/**
+	 * List of deprecated WordPress Multisite global tables.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @see wpdb::tables()
+	 * @var string[]
+	 */
+	public $old_ms_global_tables = array( 'sitecategories' );
 
 	/**
 	 * WordPress Comments table.
@@ -1087,11 +1097,13 @@ class wpdb {
 	 * - 'old' - returns tables which are deprecated.
 	 *
 	 * @since 3.0.0
+	 * @since 6.1.0 `old` now includes deprecated multisite global tables only on multisite.
 	 *
 	 * @uses wpdb::$tables
 	 * @uses wpdb::$old_tables
 	 * @uses wpdb::$global_tables
 	 * @uses wpdb::$ms_global_tables
+	 * @uses wpdb::$old_ms_global_tables
 	 *
 	 * @param string $scope   Optional. Possible values include 'all', 'global', 'ms_global', 'blog',
 	 *                        or 'old' tables. Default 'all'.
@@ -1123,6 +1135,9 @@ class wpdb {
 				break;
 			case 'old':
 				$tables = $this->old_tables;
+				if ( is_multisite() ) {
+					$tables = array_merge( $tables, $this->old_ms_global_tables );
+				}
 				break;
 			default:
 				return array();
@@ -1373,8 +1388,15 @@ class wpdb {
 	 *
 	 * Examples:
 	 *
-	 *     $wpdb->prepare( "SELECT * FROM `table` WHERE `column` = %s AND `field` = %d OR `other_field` LIKE %s", array( 'foo', 1337, '%bar' ) );
-	 *     $wpdb->prepare( "SELECT DATE_FORMAT(`field`, '%%c') FROM `table` WHERE `column` = %s", 'foo' );
+	 *     $wpdb->prepare(
+	 *         "SELECT * FROM `table` WHERE `column` = %s AND `field` = %d OR `other_field` LIKE %s",
+	 *         array( 'foo', 1337, '%bar' )
+	 *     );
+	 *
+	 *     $wpdb->prepare(
+	 *         "SELECT DATE_FORMAT(`field`, '%%c') FROM `table` WHERE `column` = %s",
+	 *         'foo'
+	 *     );
 	 *
 	 * @since 2.3.0
 	 * @since 5.3.0 Formalized the existing and already documented `...$args` parameter
@@ -1436,20 +1458,20 @@ class wpdb {
 		/*
 		 * Specify the formatting allowed in a placeholder. The following are allowed:
 		 *
-		 * - Sign specifier. eg, $+d
-		 * - Numbered placeholders. eg, %1$s
-		 * - Padding specifier, including custom padding characters. eg, %05s, %'#5s
-		 * - Alignment specifier. eg, %05-s
-		 * - Precision specifier. eg, %.2f
+		 * - Sign specifier, e.g. $+d
+		 * - Numbered placeholders, e.g. %1$s
+		 * - Padding specifier, including custom padding characters, e.g. %05s, %'#5s
+		 * - Alignment specifier, e.g. %05-s
+		 * - Precision specifier, e.g. %.2f
 		 */
 		$allowed_format = '(?:[1-9][0-9]*[$])?[-+0-9]*(?: |0|\'.)?[-+0-9]*(?:\.[0-9]+)?';
 
 		/*
-		 * If a %s placeholder already has quotes around it, removing the existing quotes and re-inserting them
-		 * ensures the quotes are consistent.
+		 * If a %s placeholder already has quotes around it, removing the existing quotes
+		 * and re-inserting them ensures the quotes are consistent.
 		 *
-		 * For backward compatibility, this is only applied to %s, and not to placeholders like %1$s, which are frequently
-		 * used in the middle of longer strings, or as table name placeholders.
+		 * For backward compatibility, this is only applied to %s, and not to placeholders like %1$s,
+		 * which are frequently used in the middle of longer strings, or as table name placeholders.
 		 */
 		$query = str_replace( "'%s'", '%s', $query ); // Strip any existing single quotes.
 		$query = str_replace( '"%s"', '%s', $query ); // Strip any existing double quotes.
@@ -1477,7 +1499,8 @@ class wpdb {
 				return;
 			} else {
 				/*
-				 * If we don't have the right number of placeholders, but they were passed as individual arguments,
+				 * If we don't have the right number of placeholders,
+				 * but they were passed as individual arguments,
 				 * or we were expecting multiple arguments in an array, throw a warning.
 				 */
 				wp_load_translations_early();
@@ -1568,15 +1591,12 @@ class wpdb {
 			return false;
 		}
 
-		wp_load_translations_early();
-
 		$caller = $this->get_caller();
 		if ( $caller ) {
-			/* translators: 1: Database error message, 2: SQL query, 3: Name of the calling function. */
-			$error_str = sprintf( __( 'WordPress database error %1$s for query %2$s made by %3$s' ), $str, $this->last_query, $caller );
+			// Not translated, as this will only appear in the error log.
+			$error_str = sprintf( 'WordPress database error %1$s for query %2$s made by %3$s', $str, $this->last_query, $caller );
 		} else {
-			/* translators: 1: Database error message, 2: SQL query. */
-			$error_str = sprintf( __( 'WordPress database error %1$s for query %2$s' ), $str, $this->last_query );
+			$error_str = sprintf( 'WordPress database error %1$s for query %2$s', $str, $this->last_query );
 		}
 
 		error_log( $error_str );
@@ -1585,6 +1605,8 @@ class wpdb {
 		if ( ! $this->show_errors ) {
 			return false;
 		}
+
+		wp_load_translations_early();
 
 		// If there is an error then take note of it.
 		if ( is_multisite() ) {
@@ -1863,7 +1885,6 @@ class wpdb {
 	 * }
 	 */
 	public function parse_db_host( $host ) {
-		$port    = null;
 		$socket  = null;
 		$is_ipv6 = false;
 
@@ -1892,12 +1913,9 @@ class wpdb {
 			return false;
 		}
 
-		$host = '';
-		foreach ( array( 'host', 'port' ) as $component ) {
-			if ( ! empty( $matches[ $component ] ) ) {
-				$$component = $matches[ $component ];
-			}
-		}
+		$host = ! empty( $matches['host'] ) ? $matches['host'] : '';
+		// MySQLi port cannot be a string; must be null or an integer.
+		$port = ! empty( $matches['port'] ) ? absint( $matches['port'] ) : null;
 
 		return array( $host, $port, $socket, $is_ipv6 );
 	}
@@ -2501,7 +2519,7 @@ class wpdb {
 	 *                                   A format is one of '%d', '%f', '%s' (integer, float, string).
 	 *                                   If omitted, all values in $data will be treated as strings unless otherwise
 	 *                                   specified in wpdb::$field_types.
-	 * @return int|false The number of rows updated, or false on error.
+	 * @return int|false The number of rows deleted, or false on error.
 	 */
 	public function delete( $table, $where, $where_format = null ) {
 		if ( ! is_array( $where ) ) {
@@ -3202,12 +3220,21 @@ class wpdb {
 		}
 
 		// If any of the columns don't have one of these collations, it needs more sanity checking.
+		$safe_collations = array(
+			'utf8_bin',
+			'utf8_general_ci',
+			'utf8mb3_bin',
+			'utf8mb3_general_ci',
+			'utf8mb4_bin',
+			'utf8mb4_general_ci',
+		);
+
 		foreach ( $this->col_meta[ $table ] as $col ) {
 			if ( empty( $col->Collation ) ) {
 				continue;
 			}
 
-			if ( ! in_array( $col->Collation, array( 'utf8_general_ci', 'utf8_bin', 'utf8mb4_general_ci', 'utf8mb4_bin' ), true ) ) {
+			if ( ! in_array( $col->Collation, $safe_collations, true ) ) {
 				return false;
 			}
 		}
@@ -3697,7 +3724,7 @@ class wpdb {
 		// Make sure the server has the required MySQL version.
 		if ( version_compare( $this->db_version(), $required_mysql_version, '<' ) ) {
 			/* translators: 1: WordPress version number, 2: Minimum required MySQL version number. */
-			return new WP_Error( 'database_version', sprintf( __( '<strong>Error</strong>: WordPress %1$s requires MySQL %2$s or higher' ), $wp_version, $required_mysql_version ) );
+			return new WP_Error( 'database_version', sprintf( __( '<strong>Error:</strong> WordPress %1$s requires MySQL %2$s or higher' ), $wp_version, $required_mysql_version ) );
 		}
 	}
 
@@ -3739,7 +3766,15 @@ class wpdb {
 	}
 
 	/**
-	 * Determines if a database supports a particular feature.
+	 * Determines whether the database or WPDB supports a particular feature.
+	 *
+	 * Capability sniffs for the database server and current version of WPDB.
+	 *
+	 * Database sniffs are based on the version of MySQL the site is using.
+	 *
+	 * WPDB sniffs are added as new features are introduced to allow theme and plugin
+	 * developers to determine feature support. This is to account for drop-ins which may
+	 * introduce feature support at a different time to WordPress.
 	 *
 	 * @since 2.7.0
 	 * @since 4.1.0 Added support for the 'utf8mb4' feature.
@@ -3749,20 +3784,30 @@ class wpdb {
 	 *
 	 * @param string $db_cap The feature to check for. Accepts 'collation', 'group_concat',
 	 *                       'subqueries', 'set_charset', 'utf8mb4', or 'utf8mb4_520'.
-	 * @return int|false Whether the database feature is supported, false otherwise.
+	 * @return bool True when the database feature is supported, false otherwise.
 	 */
 	public function has_cap( $db_cap ) {
-		$version = $this->db_version();
+		$db_version     = $this->db_version();
+		$db_server_info = $this->db_server_info();
+
+		// Account for MariaDB version being prefixed with '5.5.5-' on older PHP versions.
+		if ( '5.5.5' === $db_version && str_contains( $db_server_info, 'MariaDB' )
+			&& PHP_VERSION_ID < 80016 // PHP 8.0.15 or older.
+		) {
+			// Strip the '5.5.5-' prefix and set the version to the correct value.
+			$db_server_info = preg_replace( '/^5\.5\.5-(.*)/', '$1', $db_server_info );
+			$db_version     = preg_replace( '/[^0-9.].*/', '', $db_server_info );
+		}
 
 		switch ( strtolower( $db_cap ) ) {
 			case 'collation':    // @since 2.5.0
 			case 'group_concat': // @since 2.7.0
 			case 'subqueries':   // @since 2.7.0
-				return version_compare( $version, '4.1', '>=' );
+				return version_compare( $db_version, '4.1', '>=' );
 			case 'set_charset':
-				return version_compare( $version, '5.0.7', '>=' );
+				return version_compare( $db_version, '5.0.7', '>=' );
 			case 'utf8mb4':      // @since 4.1.0
-				if ( version_compare( $version, '5.5.3', '<' ) ) {
+				if ( version_compare( $db_version, '5.5.3', '<' ) ) {
 					return false;
 				}
 				if ( $this->use_mysqli ) {
@@ -3782,7 +3827,7 @@ class wpdb {
 					return version_compare( $client_version, '5.5.3', '>=' );
 				}
 			case 'utf8mb4_520': // @since 4.6.0
-				return version_compare( $version, '5.6', '>=' );
+				return version_compare( $db_version, '5.6', '>=' );
 		}
 
 		return false;
