@@ -104,6 +104,7 @@ abstract class WPDB_Rows {
 		if (!$action) {
 			return 0;
 		}
+		$this->delete_object_rows_cache($object_id);
 
 		// 依次删除每一行数据对应的缓存
 		$old_data = $this->get_rows($object_id);
