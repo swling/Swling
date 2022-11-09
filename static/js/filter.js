@@ -32,7 +32,7 @@ function _wnd_render_filter(container, filter_json, add_class) {
 			}
 		},
 		methods: {
-			item_class: function(key, value) {
+			item_class: function (key, value) {
 				if ('type' == key) {
 					if (value == this.filter.query_vars.post_type) {
 						return 'is-active';
@@ -48,7 +48,11 @@ function _wnd_render_filter(container, filter_json, add_class) {
 					return '';
 				}
 
-				if (this.filter.query_vars.tax_query && key.includes('_term_')) {
+				if (key.includes('_term_')) {
+					if (!this.filter.query_vars.tax_query.length) {
+						return value ? '' : 'is-active';
+					}
+
 					for (const [index, term_query] of Object.entries(this.filter.query_vars.tax_query)) {
 						if (term_query.terms == value) {
 							return 'is-active';
@@ -56,7 +60,12 @@ function _wnd_render_filter(container, filter_json, add_class) {
 					}
 				}
 
-				if (this.filter.query_vars.meta_query && key.includes('_meta_')) {
+				if (key.includes('_meta_')) {
+					// user meta query 可能不存在该值
+					if (!this.filter.query_vars.meta_query || !this.filter.query_vars.meta_query.length) {
+						return value ? '' : 'is-active';
+					}
+
 					for (const [index, meta_query] of Object.entries(this.filter.query_vars.meta_query)) {
 						if (meta_query.value == value) {
 							return 'is-active';
@@ -69,7 +78,7 @@ function _wnd_render_filter(container, filter_json, add_class) {
 				}
 			},
 
-			show_tab: function(tab) {
+			show_tab: function (tab) {
 				if (!tab.options) {
 					return false;
 				}
@@ -90,7 +99,7 @@ function _wnd_render_filter(container, filter_json, add_class) {
 				return true;
 			},
 
-			get_container: function() {
+			get_container: function () {
 				return (parent.id ? '#' + parent.id : '') + ' .wnd-filter-results';
 			},
 
@@ -106,7 +115,7 @@ function _wnd_render_filter(container, filter_json, add_class) {
 				}
 			},
 
-			update_filter: function(key, value, remove_args = []) {
+			update_filter: function (key, value, remove_args = []) {
 				/**
 				 *	切换类型：恢复初始参数
 				 *  	JavaScript 中，如果直接对数组、对象赋值，会导致关联的双方都同步改变
@@ -140,13 +149,13 @@ function _wnd_render_filter(container, filter_json, add_class) {
 				}
 
 				axios({
-						method: 'get',
-						url: filter.posts ? wnd_posts_api : wnd_users_api,
-						params: param,
-						headers: {
-							'Container': this.get_container(),
-						},
-					})
+					method: 'get',
+					url: filter.posts ? wnd_posts_api : wnd_users_api,
+					params: param,
+					headers: {
+						'Container': this.get_container(),
+					},
+				})
 					.then(response => {
 						wnd_loading(this.get_container(), true);
 						if ('undefined' == typeof response.data.status) {
@@ -156,11 +165,11 @@ function _wnd_render_filter(container, filter_json, add_class) {
 						// 合并响应数据
 						this.filter = Object.assign(this.filter, response.data.data);
 
-						this.$nextTick(function() {
+						this.$nextTick(function () {
 							funTransitionHeight(parent, trs_time);
 						});
 					})
-					.catch(function(error) { // 请求失败处理
+					.catch(function (error) { // 请求失败处理
 						console.log(error);
 					});
 			},
