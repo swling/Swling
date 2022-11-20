@@ -14,7 +14,6 @@ use WP_Core\Utility\Singleton_Trait;
  *
  * ## 注意
  * meta 统一按 $object_id_column 缓存获取"组数据”，不单独按字段名缓存“行数据”
- * 故此设置 $this->object_cache_fields = [$this->primary_id_column] 仅缓存主键，用作更新删除等操作;
  * !与 WordPress 不同，本框架同一 object id 不支持多个重名 meta key
  */
 class WPDB_Handler_Meta extends WPDB_Rows {
@@ -42,12 +41,11 @@ class WPDB_Handler_Meta extends WPDB_Rows {
 	 * - postmeta、termmeta、usermeta、commentmeta
 	 */
 	public function set_meta_type(string $meta_type) {
-		$this->primary_id_column   = ('user' === $meta_type) ? 'umeta_id' : 'meta_id';
-		$this->table_name          = $meta_type . 'meta';
-		$this->object_name         = $this->table_name;
-		$this->object_id_column    = $meta_type . '_id';
-		$this->required_columns    = [$this->object_id_column, 'meta_key', 'meta_value'];
-		$this->object_cache_fields = [$this->primary_id_column];
+		$this->primary_id_column = ('user' === $meta_type) ? 'umeta_id' : 'meta_id';
+		$this->table_name        = $meta_type . 'meta';
+		$this->object_name       = $this->table_name;
+		$this->object_id_column  = $meta_type . '_id';
+		$this->required_columns  = [$this->object_id_column, 'meta_key', 'meta_value'];
 
 		parent::__construct();
 	}
@@ -118,4 +116,5 @@ class WPDB_Handler_Meta extends WPDB_Rows {
 	public function delete_meta(int $object_id, string $meta_key): int {
 		return $this->delete_row($object_id, ['meta_key' => $meta_key]);
 	}
+
 }
