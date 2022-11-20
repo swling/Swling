@@ -145,7 +145,7 @@ class WPDB_Handler_Term extends WPDB_Row {
 				$term = $this->get($term);
 			}
 
-			$this->clean_row_cache($term);
+			$this->wpdb_row->clean_row_cache($term);
 		}
 	}
 }

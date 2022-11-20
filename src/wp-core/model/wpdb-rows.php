@@ -27,16 +27,16 @@ abstract class WPDB_Rows {
 	// 共同属性 id 字段名
 	protected $object_id_column;
 
-	// 数据表基本属性
+	// 数据表基本属性（根据上述属性生成，故一般无需在子类额外配置）
 	protected $wpdb;
 	protected $table;
 
-	// 单行操作实例
+	// 单行操作实例（根据上述属性生成，故一般无需在子类额外配置）
 	protected $wpdb_row;
 
 	/**
 	 * Constructer
-	 * 设置为 protected 权限旨在方便子类以单例模式实例化
+	 * 设置为 protected 构造方法旨在方便子类以单例模式实例化
 	 */
 	protected function __construct() {
 		$this->instance_wpdb();
@@ -109,7 +109,7 @@ abstract class WPDB_Rows {
 		// 依次删除每一行数据对应的缓存
 		$old_data = $this->get_rows($object_id);
 		foreach ($old_data as $_data) {
-			$this->wpdb_row->clean_row_cache($_data);
+			$this->wpdb_row->cache->clean_row_cache($_data);
 		}
 
 		return $action;
@@ -200,11 +200,11 @@ abstract class WPDB_Rows {
 		$primary_id_column = $this->primary_id_column;
 		$primary_id        = $data->$primary_id_column;
 
-		$primary_id = $this->wpdb_row->delete($primary_id);
-		if ($primary_id) {
+		$id = $this->wpdb_row->delete($primary_id);
+		if ($id) {
 			$this->delete_object_rows_cache($object_id);
 		}
-		return $primary_id;
+		return $id;
 	}
 
 	/**
@@ -240,4 +240,5 @@ abstract class WPDB_Rows {
 	private function delete_object_rows_cache(int $object_id): bool {
 		return wp_cache_delete($object_id, $this->table_name);
 	}
+
 }
