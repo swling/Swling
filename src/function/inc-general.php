@@ -145,7 +145,7 @@ function wnd_random_code($length = 6, $positive = false) {
  * @return 	string 	随机字符
  */
 function wnd_generate_order_NO() {
-	$today = date('Ymd');
+	$today = wnd_date('Ymd');
 	$rand  = substr(hash('sha256', uniqid(rand(), TRUE)), 0, 10);
 	return $today . $rand;
 }
@@ -272,7 +272,7 @@ function wnd_error_log(string $msg, string $file_name = 'wnd_error') {
 		return;
 	}
 
-	@error_log($msg . ' @' . wp_date('Y-m-d:H-i-s', time()) . "\n", 3, WP_PLUGIN_DIR . '/' . $file_name . '.log');
+	@error_log($msg . ' @' . wp_date('Y-m-d H:i:s', time()) . "\n", 3, WP_PLUGIN_DIR . '/' . $file_name . '.log');
 }
 
 /**
@@ -280,7 +280,7 @@ function wnd_error_log(string $msg, string $file_name = 'wnd_error') {
  * @since 0.9.38
  */
 function wnd_error_payment_log(string $msg) {
-	$msg = $msg . ' Request from ' . wnd_get_user_ip() . '. @' . $_SERVER['REQUEST_URI'] ?? '';
+	$msg = $msg . ' Request from ' . wnd_get_user_ip() . '. @' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	wnd_error_log($msg, 'wnd_payment_error');
 }
 
@@ -291,8 +291,9 @@ function wnd_error_payment_log(string $msg) {
  */
 set_exception_handler('wnd_exception_handler');
 function wnd_exception_handler($e) {
-	$error = $e->getMessage() . '@' . $e->getFile() . ' line ' . $e->getLine() . '. Request from ' . wnd_get_user_ip() . '. @' . $_SERVER['REQUEST_URI'] ?? '';
-	$html  = '<article class="column message is-danger">';
+	$error = $e->getMessage() . ' @ ' . $e->getFile() . ' line ' . $e->getLine() . '.';
+	$error .= 'Request from ' . wnd_get_user_ip() . '. @' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+	$html = '<article class="column message is-danger">';
 	$html .= '<div class="message-header">';
 	$html .= '<p>异常</p>';
 	$html .= '</div>';
@@ -335,4 +336,37 @@ if (wnd_get_config('aliyun_dm_account')) {
 			]
 		);
 	}
+}
+
+/**
+ * @since 0.9.59.2
+ * 获取本地时间戳
+ * - WP 默认设置为 UTC 时间，并通过后台配置时区来实现偏移
+ */
+function wnd_local_time(): int {
+	return wnd_time_to_local(time());
+}
+
+function wnd_time_to_local(int $timestamp): int {
+	return $timestamp + (int) get_option('gmt_offset') * HOUR_IN_SECONDS;
+}
+
+/**
+ * @since 0.9.59.2
+ * 获取本地日期时间
+ * - WP 默认设置为 UTC 时间，并通过后台配置时区来实现偏移
+ * - 本函数用于取代较为复杂的 wp_date() 函数
+ */
+function wnd_date(string $format): string {
+	return date($format, wnd_local_time());
+}
+
+/**
+ * @since 0.9.59.2
+ * 获取本地日期时间
+ * - WP 默认设置为 UTC 时间，并通过后台配置时区来实现偏移
+ * - 本函数用于自动给 php 函数 getdate() 添加时区信息
+ */
+function wnd_getdate(): array{
+	return getdate(wnd_local_time());
 }
