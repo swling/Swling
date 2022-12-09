@@ -1,6 +1,7 @@
 <?php
 namespace WP_Core\Model;
 
+use Wnd\WPDB\WPDB_Rows;
 use WP_Core\Utility\Singleton_Trait;
 
 /**
