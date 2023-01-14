@@ -34,8 +34,19 @@ class Wnd_language {
 		add_filter('post_type_archive_link', [__CLASS__, 'filter_link'], 99);
 		add_filter('post_type_link', [__CLASS__, 'filter_link'], 99);
 		add_filter('post_link', [__CLASS__, 'filter_link'], 99);
+		add_filter('page_link', [__CLASS__, 'filter_link'], 99);
+		add_filter('attachment_link', [__CLASS__, 'filter_link'], 99);
 		add_filter('author_link', [__CLASS__, 'filter_link'], 99);
 		add_filter('get_edit_post_link', [__CLASS__, 'filter_link'], 99);
+
+		// 修复因语言参数导致的评论分页 bug
+		$lang = static::parse_locale();
+		if ($lang) {
+			add_filter('get_comments_pagenum_link', function ($link) use ($lang) {
+				$link = str_replace('?' . static::$request_key . '=' . $lang, '', $link);
+				return static::filter_link($link);
+			}, 99);
+		}
 
 		// Wnd Filter
 		add_filter('wnd_option_reg_redirect_url', [__CLASS__, 'filter_reg_redirect_link'], 99);
@@ -117,7 +128,7 @@ class Wnd_language {
 	 * 从 GET 参数中解析语言参数
 	 * @since 0.9.30
 	 */
-	private static function parse_locale() {
+	public static function parse_locale() {
 		$locale = $_REQUEST[static::$request_key] ?? false;
 		if (!$locale or !in_array($locale, self::language_codes)) {
 			return false;
