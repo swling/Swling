@@ -107,7 +107,7 @@ class WPDB_Handler_Meta extends WPDB_Rows {
 		$data               = (array) $data;
 		$data['meta_value'] = $meta_value;
 
-		return $this->update_row($object_id, ['meta_key' => $meta_key], $data);
+		return $this->update_row($object_id, $data, ['meta_key' => $meta_key]);
 	}
 
 	/**
